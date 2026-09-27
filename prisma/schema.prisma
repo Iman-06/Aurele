@@ -1,0 +1,171 @@
+// ============================================================
+// LUNARA — DATABASE SCHEMA (Prisma / PostgreSQL)
+// Based on the real Lunara_Inventory_System_FINAL.xlsx structure
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------------
+
+enum Category {
+  EARRINGS
+  RINGS
+  BRACELETS
+  NECKLACE
+}
+
+enum Finish {
+  GOLD
+  SILVER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  ONLINE
+}
+
+// ------------------------------------------------------------
+// PRODUCT = one design (matches "Article No." in the spreadsheet)
+// e.g. Article 001 "Aveline pearl drop"
+// ------------------------------------------------------------
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  category    Category
+  articleNo   Int       // NOTE: unique per category, not globally (Rings 001 != Earrings 001)
+  name        String
+  description String?
+  isActive    Boolean   @default(true) // lets you hide a design without deleting inventory history
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  variants    Variant[]
+
+  @@unique([category, articleNo], name: "category_articleNo")
+}
+
+// ------------------------------------------------------------
+// VARIANT = one stockable row (matches one row in your spreadsheet)
+// e.g. Article 001 + Gold + Blue = LN-EAR-001-GD, qty 2
+//
+// IMPORTANT: the SKU (LN-EAR-001-GD) is NOT unique on its own —
+// Gold+Blue, Gold+Green, Gold+Red all share it. The real unique
+// identifier for a stock row is (product, finish, colour, size).
+// ------------------------------------------------------------
+
+model Variant {
+  id           Int      @id @default(autoincrement())
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId    Int
+
+  finish       Finish
+  colour       String   @default("None / Single") // literal sentinel value, matches your Lists sheet
+  size         String?  // only populated for Category.RINGS
+
+  sku          String   // generated: LN-<CAT>-<articleNo>-<finishCode>, e.g. LN-EAR-001-GD
+  quantity     Int      @default(0)
+  costPrice    Decimal? @db.Decimal(10, 2)
+  sellingPrice Decimal? @db.Decimal(10, 2) // nullable: your sheet has blanks not yet priced
+  photoRef     String?  // filename/URL of the 1-2 photos for this exact finish+colour combo
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  orderItems   OrderItem[]
+
+  // this is the real uniqueness constraint — one stock row per exact combination
+  @@unique([productId, finish, colour, size], name: "product_finish_colour_size")
+  @@index([sku])
+}
+
+// Status ("Available" / "Low Stock" / "Out of Stock") is intentionally
+// NOT a stored column. Compute it in the app from `quantity`:
+//   0            -> Out of Stock
+//   1-3 (tune)   -> Low Stock
+//   4+           -> Available
+// This guarantees it's never out of sync with real stock, unlike a
+// manually-edited spreadsheet cell.
+
+// ------------------------------------------------------------
+// CUSTOMER (optional account — guest checkout also supported)
+// ------------------------------------------------------------
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  phone     String?
+  passwordHash String? // null for guest-only customers
+  createdAt DateTime @default(now())
+
+  orders    Order[]
+}
+
+// ------------------------------------------------------------
+// ORDER / ORDER ITEM
+// ------------------------------------------------------------
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  customer      Customer?     @relation(fields: [customerId], references: [id])
+  customerId    Int?          // null for guest checkout
+
+  guestName     String?
+  guestEmail    String?
+  guestPhone    String?
+  shippingAddress String
+
+  paymentMethod PaymentMethod
+  status        OrderStatus   @default(PENDING)
+
+  subtotal      Decimal       @db.Decimal(10, 2)
+  total         Decimal       @db.Decimal(10, 2)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId     Int
+  variant     Variant  @relation(fields: [variantId], references: [id])
+  variantId   Int      // references the exact stock row, not just the SKU
+
+  quantity    Int
+  priceAtSale Decimal  @db.Decimal(10, 2) // snapshot — protects order history if price changes later
+}
+
+// ------------------------------------------------------------
+// HOW THE STOREFRONT USES THIS (for whoever builds the UI):
+//
+// 1. Fetch Product by slug/id, include its variants.
+// 2. Available Finishes = distinct `finish` values across variants
+//    where quantity > 0 (or however you want to handle 0-stock display).
+// 3. Once Finish is picked -> Available Colours = distinct `colour`
+//    values among variants with that finish and quantity > 0.
+// 4. Once Colour (+ Size, for rings) is picked -> exact Variant row
+//    -> use its price, photoRef, and quantity for stock status.
+// 5. Because this is all computed live from the Variant table,
+//    adding/removing rows in the admin panel changes what the
+//    customer sees automatically — no separate "sync" step needed.
+// ------------------------------------------------------------
