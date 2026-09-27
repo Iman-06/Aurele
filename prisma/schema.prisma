@@ -1,15 +1,17 @@
 // ============================================================
 // LUNARA — DATABASE SCHEMA (Prisma / PostgreSQL)
-// Based on the real Lunara_Inventory_System_FINAL.xlsx structure
+// Based on data/Lunara_Inventory_System_FINAL.xlsx and the BRD.
+// This file is the shared contract between all three tracks —
+// agree changes as a team before editing.
 // ============================================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ------------------------------------------------------------
@@ -28,9 +30,12 @@ enum Finish {
   SILVER
 }
 
+// Awaiting payment (online only, 2h hold) → New → Processing → Shipped → Delivered.
+// There is no owner "confirm" step: COD orders are final the moment they are placed.
 enum OrderStatus {
-  PENDING
-  CONFIRMED
+  AWAITING_PAYMENT
+  NEW
+  PROCESSING
   SHIPPED
   DELIVERED
   CANCELLED
@@ -41,131 +46,235 @@ enum PaymentMethod {
   ONLINE
 }
 
+enum PaymentStatus {
+  UNPAID // COD before delivery, or online not yet paid
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum StockMovementReason {
+  IMPORT // Excel importer set the quantity
+  ADMIN_ADJUST // owner changed quantity in the admin panel
+  ORDER_PLACED // stock taken by a new order (COD or online reservation)
+  ORDER_CANCELLED // stock returned because the owner cancelled
+  PAYMENT_EXPIRED // stock returned because the 2h online-payment hold ran out
+  PAYMENT_FAILED // stock returned because the online payment failed
+}
+
 // ------------------------------------------------------------
 // PRODUCT = one design (matches "Article No." in the spreadsheet)
-// e.g. Article 001 "Aveline pearl drop"
+// e.g. Earrings article 001 "Aveline pearl drop"
 // ------------------------------------------------------------
 
 model Product {
-  id          Int       @id @default(autoincrement())
-  category    Category
-  articleNo   Int       // NOTE: unique per category, not globally (Rings 001 != Earrings 001)
-  name        String
-  description String?
-  isActive    Boolean   @default(true) // lets you hide a design without deleting inventory history
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  variants    Variant[]
-
-  @@unique([category, articleNo], name: "category_articleNo")
-}
-
-// ------------------------------------------------------------
-// VARIANT = one stockable row (matches one row in your spreadsheet)
-// e.g. Article 001 + Gold + Blue = LN-EAR-001-GD, qty 2
-//
-// IMPORTANT: the SKU (LN-EAR-001-GD) is NOT unique on its own —
-// Gold+Blue, Gold+Green, Gold+Red all share it. The real unique
-// identifier for a stock row is (product, finish, colour, size).
-// ------------------------------------------------------------
-
-model Variant {
   id           Int      @id @default(autoincrement())
-  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId    Int
-
-  finish       Finish
-  colour       String   @default("None / Single") // literal sentinel value, matches your Lists sheet
-  size         String?  // only populated for Category.RINGS
-
-  sku          String   // generated: LN-<CAT>-<articleNo>-<finishCode>, e.g. LN-EAR-001-GD
-  quantity     Int      @default(0)
-  costPrice    Decimal? @db.Decimal(10, 2)
-  sellingPrice Decimal? @db.Decimal(10, 2) // nullable: your sheet has blanks not yet priced
-  photoRef     String?  // filename/URL of the 1-2 photos for this exact finish+colour combo
-
+  category     Category
+  articleNo    Int // unique per category, not globally (Rings 001 != Earrings 001)
+  name         String
+  slug         String   @unique // URL, e.g. "aveline-pearl-drop-ear-001"
+  description  String?
+  isActive     Boolean  @default(true) // hide the whole design without deleting history
+  isNewArrival Boolean  @default(false) // owner picks what shows under "New Arrivals"
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  orderItems   OrderItem[]
+  variants Variant[]
+  images   ProductImage[]
 
-  // this is the real uniqueness constraint — one stock row per exact combination
-  @@unique([productId, finish, colour, size], name: "product_finish_colour_size")
+  @@unique([category, articleNo])
+  @@index([isActive, category])
+}
+
+// ------------------------------------------------------------
+// VARIANT = one stockable row (one row in the spreadsheet)
+// e.g. Earrings 001 + Gold + Blue → SKU EAR-001-GD, qty 2
+//
+// The SKU is NOT unique: Gold+Blue and Gold+Green share EAR-001-GD.
+// The real identity of a stock row is (product, finish, colour, size).
+// `size` is "" (not NULL) for non-rings so the unique constraint
+// actually blocks duplicates (Postgres treats NULLs as all different).
+// ------------------------------------------------------------
+
+model Variant {
+  id        Int     @id @default(autoincrement())
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+
+  finish Finish
+  colour String @default("None / Single") // sentinel from the Lists sheet = no colour choice
+  size   String @default("") // rings only, e.g. "8" or "Adjustable"
+
+  sku          String // generated: <CAT>-<articleNo>-<finishCode>, e.g. EAR-001-GD
+  quantity     Int      @default(0) // never negative — enforced by a CHECK constraint in the migration
+  costPrice    Decimal? @db.Decimal(10, 2)
+  sellingPrice Decimal? @db.Decimal(10, 2) // null = not priced yet → hidden from the storefront
+  isActive     Boolean  @default(true) // false = owner marked this variant sold out / hidden
+  photoRef     String? // raw "Photo Ref." from the spreadsheet, kept for reference
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItems     OrderItem[]
+  stockMovements StockMovement[]
+
+  @@unique([productId, finish, colour, size])
   @@index([sku])
 }
 
-// Status ("Available" / "Low Stock" / "Out of Stock") is intentionally
-// NOT a stored column. Compute it in the app from `quantity`:
-//   0            -> Out of Stock
-//   1-3 (tune)   -> Low Stock
-//   4+           -> Available
-// This guarantees it's never out of sync with real stock, unlike a
-// manually-edited spreadsheet cell.
+// Stock status is NOT stored — compute it from `quantity` (see src/server):
+//   0     → Out of Stock (option hidden on the storefront)
+//   1–3   → "Only N left"
+//   4+    → Available
+
+// ------------------------------------------------------------
+// PRODUCT IMAGE — photos belong to a design + finish + colour,
+// so every ring size of the same colour shares the same photos.
+// finish/colour null = general photo for the design.
+// ------------------------------------------------------------
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int
+
+  finish    Finish?
+  colour    String?
+  url       String
+  alt       String?
+  sortOrder Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([productId, finish, colour])
+}
 
 // ------------------------------------------------------------
 // CUSTOMER (optional account — guest checkout also supported)
 // ------------------------------------------------------------
 
 model Customer {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  phone     String?
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String?
+  phone        String?
   passwordHash String? // null for guest-only customers
-  createdAt DateTime @default(now())
+  createdAt    DateTime @default(now())
 
-  orders    Order[]
+  orders Order[]
 }
 
 // ------------------------------------------------------------
 // ORDER / ORDER ITEM
+// Contact + shipping details are stored on every order (the BRD
+// asks customers to enter them each time), account or guest.
 // ------------------------------------------------------------
 
 model Order {
-  id            Int           @id @default(autoincrement())
-  customer      Customer?     @relation(fields: [customerId], references: [id])
-  customerId    Int?          // null for guest checkout
+  id          Int       @id @default(autoincrement())
+  // customer-facing, e.g. "10001" — from a DB sequence created in the first migration
+  orderNumber String    @unique @default(dbgenerated("(nextval('order_number_seq'))::text"))
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  customerId  Int? // null for guest checkout
 
-  guestName     String?
-  guestEmail    String?
-  guestPhone    String?
-  shippingAddress String
+  customerName String
+  email        String
+  phone        String
+  address      String
+  city         String
+  postalCode   String?
 
   paymentMethod PaymentMethod
-  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  paymentRef    String? // gateway transaction id (online)
+  paidAt        DateTime?
+  status        OrderStatus
 
-  subtotal      Decimal       @db.Decimal(10, 2)
-  total         Decimal       @db.Decimal(10, 2)
+  // Online orders hold their stock until this time (placed + 2h).
+  // If still unpaid by then, the order is auto-cancelled and stock returned.
+  reservedUntil DateTime?
 
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  subtotal    Decimal @db.Decimal(10, 2)
+  shippingFee Decimal @db.Decimal(10, 2)
+  total       Decimal @db.Decimal(10, 2)
 
-  items         OrderItem[]
+  cancelReason String?
+  cancelledAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items          OrderItem[]
+  stockMovements StockMovement[]
+
+  @@index([status, createdAt])
+  @@index([status, reservedUntil])
 }
 
 model OrderItem {
-  id          Int      @id @default(autoincrement())
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId     Int
-  variant     Variant  @relation(fields: [variantId], references: [id])
-  variantId   Int      // references the exact stock row, not just the SKU
+  id        Int     @id @default(autoincrement())
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   Int
+  variant   Variant @relation(fields: [variantId], references: [id])
+  variantId Int // the exact stock row, not just the SKU
 
-  quantity    Int
-  priceAtSale Decimal  @db.Decimal(10, 2) // snapshot — protects order history if price changes later
+  quantity Int
+
+  // Snapshot at time of sale — order history stays correct even if the
+  // product is renamed, repriced or deleted later.
+  priceAtSale Decimal @db.Decimal(10, 2)
+  productName String
+  sku         String
+  finish      Finish
+  colour      String
+  size        String
 }
 
 // ------------------------------------------------------------
-// HOW THE STOREFRONT USES THIS (for whoever builds the UI):
-//
-// 1. Fetch Product by slug/id, include its variants.
-// 2. Available Finishes = distinct `finish` values across variants
-//    where quantity > 0 (or however you want to handle 0-stock display).
-// 3. Once Finish is picked -> Available Colours = distinct `colour`
-//    values among variants with that finish and quantity > 0.
-// 4. Once Colour (+ Size, for rings) is picked -> exact Variant row
-//    -> use its price, photoRef, and quantity for stock status.
-// 5. Because this is all computed live from the Variant table,
-//    adding/removing rows in the admin panel changes what the
-//    customer sees automatically — no separate "sync" step needed.
+// STOCK MOVEMENT — history of every quantity change, so the owner
+// can see why stock went up or down.
 // ------------------------------------------------------------
+
+model StockMovement {
+  id        Int     @id @default(autoincrement())
+  variant   Variant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  variantId Int
+  order     Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderId   Int?
+
+  change        Int // negative = stock out, positive = stock back in
+  quantityAfter Int
+  reason        StockMovementReason
+  note          String?
+  createdAt     DateTime            @default(now())
+
+  @@index([variantId, createdAt])
+}
+
+// ------------------------------------------------------------
+// ADMIN / MAILING LIST / SETTINGS
+// ------------------------------------------------------------
+
+model AdminUser {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  name         String?
+  passwordHash String
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
+
+model Subscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+// Simple key/value store for owner-editable settings, e.g.
+//   shipping_fee        → "250"
+//   low_stock_threshold → "3"
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
