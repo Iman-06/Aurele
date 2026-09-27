@@ -261,6 +261,22 @@ describe("real inventory workbook", () => {
     expect((await get("NECKLACE", 3)).name).toBe("Aura Drop");
     expect((await get("NECKLACE", 3)).variants.map((v) => v.colour)).toEqual(["Blue", "Green"]);
 
+    // Exact totals per category (sample rows 502–505 were removed from the sheet)
+    const totals = await Promise.all(
+      (["EARRINGS", "RINGS", "BRACELETS", "NECKLACE"] as const).map(async (category) => [
+        category,
+        await db.product.count({ where: { category } }),
+        await db.variant.count({ where: { product: { category } } }),
+      ]),
+    );
+    expect(totals).toEqual([
+      ["EARRINGS", 3, 15],
+      ["RINGS", 2, 2],
+      ["BRACELETS", 0, 0],
+      ["NECKLACE", 4, 5],
+    ]);
+    expect(parsed.issues.filter((i) => i.level === "warning").map((i) => i.where)).toEqual(["Rings!4"]);
+
     // No SKU anywhere still carries the old LN- prefix
     expect(await db.variant.count({ where: { sku: { startsWith: "LN-" } } })).toBe(0);
   });
