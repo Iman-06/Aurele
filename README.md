@@ -21,6 +21,8 @@ Shared: `src/lib/` (small helpers), `prisma/schema.prisma` (the shared data cont
 - Last piece → whoever completes first. If a JazzCash payment arrives for something that sold out meanwhile, the order is cancelled and flagged **REFUND_NEEDED** for the owner.
 - Unpaid JazzCash orders become **ABANDONED** after 24h (no stock involved).
 
+**Full API guide for Tracks 1 and 3: [docs/API.md](docs/API.md).**
+
 ### Order functions for checkout (Track 3) — `src/server/orders/orders.ts`
 
 | Function | Call it when | Result |
