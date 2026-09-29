@@ -9,7 +9,10 @@ export const metadata: Metadata = {
 };
 
 // Sections are added as the admin steps are built (products, inventory, orders).
-const NAV = [{ href: "/admin", label: "Dashboard" }];
+const NAV = [
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/products", label: "Products" },
+];
 
 export default async function AdminPanelLayout({ children }: LayoutProps<"/admin">) {
   // Shell only — each page and Server Action also runs its own requireAdmin() check.

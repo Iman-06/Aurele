@@ -38,7 +38,7 @@ yarn-error.log*
 /src/generated/
 
 # locally stored product images (swapped for Cloudinary before launch)
-/public/uploads/
+/storage/
 
 # vercel
 .vercel
