@@ -14,6 +14,25 @@ Shared: `src/lib/` (small helpers), `prisma/schema.prisma` (the shared data cont
 
 **Business logic lives in `src/server/`** (catalog, inventory, orders). Pages and API routes call those functions rather than touching the database directly, so stock rules (reservations, "Only N left", first-come-first-served) are enforced in one place.
 
+## Payments & stock rules (agreed)
+
+- Payment methods: **Cash on Delivery** and **JazzCash** (merchant). No bank transfer, no other gateway.
+- **Stock is never reserved.** COD takes stock when the order is placed. JazzCash takes stock only when payment is confirmed.
+- Last piece → whoever completes first. If a JazzCash payment arrives for something that sold out meanwhile, the order is cancelled and flagged **REFUND_NEEDED** for the owner.
+- Unpaid JazzCash orders become **ABANDONED** after 24h (no stock involved).
+
+### Order functions for checkout (Track 3) — `src/server/orders/orders.ts`
+
+| Function | Call it when | Result |
+|---|---|---|
+| `placeOrder(db, { items, customer, paymentMethod })` | customer submits checkout | COD → `NEW` order, stock taken. JazzCash → `AWAITING_PAYMENT`, then redirect to JazzCash with `order.orderNumber` + `order.total` |
+| `confirmJazzCashPayment(db, { orderNumber, paymentRef, amountPaid })` | JazzCash reports a **successful** payment (after verifying its signature) | `{ outcome: "PAID" }` → send confirmation email. `"REFUND_NEEDED"` → tell the customer it sold out and they'll be refunded. `"ALREADY_PROCESSED"` → duplicate notification, ignore |
+| `abandonUnpaidOrders(db)` | on a timer (e.g. hourly cron) | marks 24h-old unpaid JazzCash orders ABANDONED |
+
+A failed/cancelled JazzCash payment needs no call — the order simply stays unpaid (the customer can retry) until abandoned.
+
+Errors are thrown as `DomainError` (`src/server/errors.ts`) with a `code` (`OUT_OF_STOCK`, `NOT_PURCHASABLE`, `INVALID_INPUT`, `AMOUNT_MISMATCH`, …) and a customer-friendly `message`. Never send prices from the browser — they are always read from the database.
+
 ## Folder layout
 
 ```

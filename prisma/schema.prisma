@@ -30,8 +30,12 @@ enum Finish {
   SILVER
 }
 
-// Awaiting payment (online only, 2h hold) → New → Processing → Shipped → Delivered.
-// There is no owner "confirm" step: COD orders are final the moment they are placed.
+// Stock is NEVER reserved.
+//   COD:      placed → NEW (stock taken immediately — it's a sale)
+//   JazzCash: placed → AWAITING_PAYMENT (no stock taken)
+//             paid   → NEW (stock taken now), or CANCELLED + REFUND_NEEDED if it sold out meanwhile
+//             unpaid for 24h → ABANDONED (nothing to give back)
+// Then the owner moves NEW → PROCESSING → SHIPPED → DELIVERED. No owner "confirm" step.
 enum OrderStatus {
   AWAITING_PAYMENT
   NEW
@@ -39,27 +43,26 @@ enum OrderStatus {
   SHIPPED
   DELIVERED
   CANCELLED
+  ABANDONED
 }
 
 enum PaymentMethod {
   COD
-  ONLINE
+  JAZZCASH
 }
 
 enum PaymentStatus {
-  UNPAID // COD before delivery, or online not yet paid
+  UNPAID // COD until delivered, or JazzCash not yet paid
   PAID
-  FAILED
+  REFUND_NEEDED // paid, but the order can't be fulfilled — owner must refund
   REFUNDED
 }
 
 enum StockMovementReason {
   IMPORT // Excel importer set the quantity
   ADMIN_ADJUST // owner changed quantity in the admin panel
-  ORDER_PLACED // stock taken by a new order (COD or online reservation)
-  ORDER_CANCELLED // stock returned because the owner cancelled
-  PAYMENT_EXPIRED // stock returned because the 2h online-payment hold ran out
-  PAYMENT_FAILED // stock returned because the online payment failed
+  SALE // COD order placed, or JazzCash payment confirmed
+  ORDER_CANCELLED // stock returned because the order was cancelled
 }
 
 // ------------------------------------------------------------
@@ -173,7 +176,7 @@ model Customer {
 model Order {
   id          Int       @id @default(autoincrement())
   // customer-facing, e.g. "10001" — from a DB sequence created in the first migration
-  orderNumber String    @unique @default(dbgenerated("(nextval('order_number_seq'))::text"))
+  orderNumber String    @unique @default(dbgenerated("(nextval('order_number_seq'::regclass))::text"))
   customer    Customer? @relation(fields: [customerId], references: [id])
   customerId  Int? // null for guest checkout
 
@@ -186,13 +189,13 @@ model Order {
 
   paymentMethod PaymentMethod
   paymentStatus PaymentStatus @default(UNPAID)
-  paymentRef    String? // gateway transaction id (online)
+  paymentRef    String? // JazzCash transaction reference
   paidAt        DateTime?
   status        OrderStatus
 
-  // Online orders hold their stock until this time (placed + 2h).
-  // If still unpaid by then, the order is auto-cancelled and stock returned.
-  reservedUntil DateTime?
+  // Set when this order's items were taken out of stock (COD: on placing,
+  // JazzCash: on payment). Null = no stock to give back if it's cancelled.
+  stockDeductedAt DateTime?
 
   subtotal    Decimal @db.Decimal(10, 2)
   shippingFee Decimal @db.Decimal(10, 2)
@@ -208,7 +211,7 @@ model Order {
   stockMovements StockMovement[]
 
   @@index([status, createdAt])
-  @@index([status, reservedUntil])
+  @@index([paymentStatus])
 }
 
 model OrderItem {

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@/generated/prisma/client";
+import type { Prisma, PrismaClient } from "@/generated/prisma/client";
 import { DEFAULT_LOW_STOCK_THRESHOLD } from "./inventory/catalog-rules";
 
 // Owner-editable settings stored in the Setting table (key → string value).
@@ -16,12 +16,12 @@ export async function ensureDefaultSettings(db: PrismaClient) {
   }
 }
 
-export async function getSetting(db: PrismaClient, key: SettingKey): Promise<string> {
+export async function getSetting(db: PrismaClient | Prisma.TransactionClient, key: SettingKey): Promise<string> {
   const row = await db.setting.findUnique({ where: { key } });
   return row?.value ?? SETTING_DEFAULTS[key];
 }
 
-export async function getNumberSetting(db: PrismaClient, key: SettingKey): Promise<number> {
+export async function getNumberSetting(db: PrismaClient | Prisma.TransactionClient, key: SettingKey): Promise<number> {
   const n = Number(await getSetting(db, key));
   return Number.isFinite(n) ? n : Number(SETTING_DEFAULTS[key]);
 }
