@@ -14,6 +14,8 @@ const TYPES = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" } as con
 type Ext = keyof typeof TYPES;
 
 const storageDir = () => process.env.MEDIA_DIR ?? path.join(process.cwd(), "storage", "uploads");
+// Uploaded photos are runtime data, not build files — the /*turbopackIgnore*/ comments stop the
+// production build from bundling the whole project because of these dynamic paths.
 const SAFE_NAME = /^[a-f0-9-]{36}\.(jpg|png|webp)$/;
 
 /** Detect the real file type from its first bytes (never trust the filename or browser). */
@@ -37,8 +39,8 @@ export async function saveImage(file: File): Promise<string> {
   if (!ext) throw new DomainError("INVALID_INPUT", "Only JPG, PNG or WebP photos can be uploaded");
 
   const name = `${randomUUID()}.${ext}`;
-  await mkdir(storageDir(), { recursive: true });
-  await writeFile(path.join(storageDir(), name), bytes);
+  await mkdir(/*turbopackIgnore: true*/ storageDir(), { recursive: true });
+  await writeFile(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ storageDir(), name), bytes);
   return `${MEDIA_URL_PREFIX}${name}`;
 }
 
@@ -46,7 +48,7 @@ export async function saveImage(file: File): Promise<string> {
 export async function removeImage(url: string) {
   const name = url.startsWith(MEDIA_URL_PREFIX) ? url.slice(MEDIA_URL_PREFIX.length) : "";
   if (!SAFE_NAME.test(name)) return;
-  await unlink(path.join(storageDir(), name)).catch(() => {});
+  await unlink(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ storageDir(), name)).catch(() => {});
 }
 
 /** Read a stored photo for serving. Returns null for anything that isn't one of our file names. */
@@ -54,7 +56,7 @@ export async function readImage(name: string): Promise<{ bytes: Buffer; contentT
   const m = SAFE_NAME.exec(name); // also blocks "../" path tricks
   if (!m) return null;
   try {
-    return { bytes: await readFile(path.join(storageDir(), name)), contentType: TYPES[m[1] as Ext] };
+    return { bytes: await readFile(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ storageDir(), name)), contentType: TYPES[m[1] as Ext] };
   } catch {
     return null;
   }
