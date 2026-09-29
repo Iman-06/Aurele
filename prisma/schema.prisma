@@ -265,6 +265,13 @@ model AdminUser {
   passwordHash String
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
+
+  // Brute-force protection: after 5 wrong passwords the account is locked for 15 minutes.
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+
+  // Stored inside the login cookie. Bumping it (e.g. on password reset) logs out every device.
+  sessionVersion Int @default(1)
 }
 
 model Subscriber {

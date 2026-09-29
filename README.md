@@ -59,3 +59,9 @@ npm run dev                 # http://localhost:3000
 ```
 
 Other scripts: `npm test`, `npm run typecheck`, `npm run lint`, `npm run db:studio` (browse the DB).
+
+## Admin login
+
+- Create the owner's login (or reset a password) — run it yourself in a terminal: `npm run admin:create`
+- Sign in at `/admin/login`. Sessions last 7 days; 5 wrong passwords lock the account for 15 minutes.
+- Protect every admin page / Server Action / API route with `requireAdmin()` or `getAdmin()` from `src/server/auth/admin-session.ts`. `src/proxy.ts` is only a fast first gate.
