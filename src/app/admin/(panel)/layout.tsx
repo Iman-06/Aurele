@@ -12,6 +12,8 @@ export const metadata: Metadata = {
 const NAV = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/products", label: "Products" },
+  { href: "/admin/inventory", label: "Inventory" },
+  { href: "/admin/settings", label: "Settings" },
 ];
 
 export default async function AdminPanelLayout({ children }: LayoutProps<"/admin">) {
