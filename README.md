@@ -54,7 +54,8 @@ Requirements: Node.js 22+ (LTS), PostgreSQL 16+ running locally.
 npm install
 cp .env.example .env        # then fill in DATABASE_URL etc.
 npm run db:migrate          # create tables
-npm run db:seed             # admin user + inventory import
+npm run db:seed             # default settings + inventory import
+npm run admin:create        # create the owner's admin login (interactive)
 npm run dev                 # http://localhost:3000
 ```
 
