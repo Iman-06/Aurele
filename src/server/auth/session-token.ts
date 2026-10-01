@@ -10,7 +10,9 @@ export type AdminSessionPayload = { adminId: number; sv: number }; // sv = sessi
 
 function key() {
   const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 32) throw new Error("AUTH_SECRET must be set (at least 32 characters)");
+  if (!secret || secret.length < 32 || secret.startsWith("CHANGE_ME")) {
+    throw new Error("AUTH_SECRET must be set to a random value of at least 32 characters (not the .env.example placeholder)");
+  }
   return new TextEncoder().encode(secret);
 }
 

@@ -13,6 +13,7 @@ const STATUS: Record<DomainErrorCode, number> = {
   INVALID_TRANSITION: 409,
   STOCK_CONFLICT: 409,
   AMOUNT_MISMATCH: 409,
+  TOO_MANY_REQUESTS: 429,
 };
 
 export function errorResponse(code: DomainErrorCode, message: string, details?: unknown) {
@@ -27,10 +28,16 @@ export function handleError(e: unknown) {
   return NextResponse.json({ error: { code: "SERVER_ERROR", message: "Something went wrong. Please try again." } }, { status: 500 });
 }
 
-/** Parse a JSON request body, or throw INVALID_INPUT. */
+const MAX_JSON_BYTES = 64 * 1024; // a full 50-line cart is a few KB
+
+/** Parse a JSON request body (max 64 KB), or throw INVALID_INPUT. */
 export async function readJson(req: Request): Promise<unknown> {
+  const declared = Number(req.headers.get("content-length") ?? 0);
+  if (declared > MAX_JSON_BYTES) throw new DomainError("INVALID_INPUT", "Request is too large");
+  const text = await req.text();
+  if (text.length > MAX_JSON_BYTES) throw new DomainError("INVALID_INPUT", "Request is too large");
   try {
-    return await req.json();
+    return JSON.parse(text);
   } catch {
     throw new DomainError("INVALID_INPUT", "Request body must be valid JSON");
   }

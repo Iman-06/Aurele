@@ -9,7 +9,7 @@ import { abandonUnpaidOrders } from "@/server/orders/orders";
 
 function authorised(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
+  if (!secret || secret.length < 16 || secret.startsWith("CHANGE_ME")) return false; // unset or placeholder → locked
   const given = Buffer.from(req.headers.get("authorization") ?? "");
   const expected = Buffer.from(`Bearer ${secret}`);
   return given.length === expected.length && timingSafeEqual(given, expected);

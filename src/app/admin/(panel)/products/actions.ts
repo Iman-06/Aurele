@@ -19,6 +19,7 @@ import {
 import { requireAdmin } from "@/server/auth/admin-session";
 import { DomainError } from "@/server/errors";
 import { adjustStock } from "@/server/inventory/stock";
+import { z } from "zod";
 import { run, type ActionState } from "../action-state";
 
 // Every action re-checks the admin session (Server Actions are public endpoints).
@@ -52,7 +53,9 @@ export async function updateProductAction(productId: number, _s: ActionState, fd
 
 export async function toggleProductFlagAction(productId: number, flag: "isActive" | "isNewArrival", value: boolean): Promise<void> {
   await requireAdmin();
-  await setProductFlags(db, productId, { [flag]: value });
+  // Bound arguments arrive from the browser — check them at runtime, not just in TypeScript.
+  const args = z.object({ productId: z.number().int().positive(), flag: z.enum(["isActive", "isNewArrival"]), value: z.boolean() }).parse({ productId, flag, value });
+  await setProductFlags(db, args.productId, { [args.flag]: args.value });
   refresh(productId);
 }
 

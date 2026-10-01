@@ -1,8 +1,10 @@
 import { ActionForm } from "@/components/admin/action-form";
-import { card, input, label } from "@/components/admin/ui";
+import { ConfirmButton } from "@/components/admin/confirm-button";
+import { btnDanger, card, input, label } from "@/components/admin/ui";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/server/auth/admin-session";
 import { getNumberSetting } from "@/server/settings";
+import { logoutEverywhere } from "../../auth-actions";
 import { saveSettingsAction } from "../inventory/actions";
 
 export const metadata = { title: "Settings" };
@@ -29,6 +31,15 @@ export default async function SettingsPage() {
             </span>
           </label>
         </ActionForm>
+      </section>
+      <section className={card}>
+        <h2 className="font-semibold">Security</h2>
+        <p className="mb-3 text-sm text-stone-600">Lost a phone or signed in on someone else&apos;s computer? This signs you out on every device. You&apos;ll need to sign in again here.</p>
+        <form action={logoutEverywhere}>
+          <ConfirmButton message="Sign out on every device?" className={btnDanger}>
+            Sign out everywhere
+          </ConfirmButton>
+        </form>
       </section>
     </div>
   );

@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { authenticateAdmin } from "@/server/auth/admin-accounts";
-import { endAdminSession, startAdminSession } from "@/server/auth/admin-session";
+import { authenticateAdmin, revokeAllSessions } from "@/server/auth/admin-accounts";
+import { endAdminSession, requireAdmin, startAdminSession } from "@/server/auth/admin-session";
 
 export type LoginState = { error?: string; email?: string } | undefined;
 
@@ -35,6 +35,14 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
 }
 
 export async function logout() {
+  await endAdminSession();
+  redirect("/admin/login");
+}
+
+/** Sign out on every device (e.g. a phone was lost) — all existing login cookies stop working. */
+export async function logoutEverywhere() {
+  const admin = await requireAdmin();
+  await revokeAllSessions(db, admin.id);
   await endAdminSession();
   redirect("/admin/login");
 }

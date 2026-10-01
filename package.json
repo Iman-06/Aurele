@@ -14,7 +14,9 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "import:inventory": "tsx scripts/import-inventory.ts",
-    "admin:create": "tsx scripts/create-admin.ts"
+    "admin:create": "tsx scripts/create-admin.ts",
+    "db:deploy": "prisma migrate deploy",
+    "setup": "prisma generate && prisma migrate deploy && prisma db seed"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

@@ -8,7 +8,8 @@ export type DomainErrorCode =
   | "OUT_OF_STOCK"
   | "INVALID_TRANSITION" // e.g. cancelling a shipped order
   | "STOCK_CONFLICT" // stock changed while the owner was editing it
-  | "AMOUNT_MISMATCH"; // JazzCash paid amount ≠ order total
+  | "AMOUNT_MISMATCH" // JazzCash paid amount ≠ order total
+  | "TOO_MANY_REQUESTS"; // e.g. too many orders from one phone/email in an hour
 
 export class DomainError extends Error {
   constructor(

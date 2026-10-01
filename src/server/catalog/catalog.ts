@@ -334,14 +334,15 @@ export async function validateCart(db: PrismaClient, input: ValidateCartInput): 
     const v = byId.get(item.variantId);
     const sellable = v && v.isActive && v.product.isActive && v.sellingPrice !== null;
     if (!v || !sellable) {
+      // Never reveal what a hidden/unpriced item is — it may be an unreleased design.
       return {
         variantId: item.variantId,
-        slug: v?.product.slug ?? null,
-        name: v?.product.name ?? "Item no longer available",
-        label: v ? variantLabel({ ...v, productName: v.product.name }) : "Item no longer available",
-        finish: v?.finish ?? null,
-        colour: v?.colour ?? null,
-        size: v?.size ?? null,
+        slug: null,
+        name: "Item no longer available",
+        label: "Item no longer available",
+        finish: null,
+        colour: null,
+        size: null,
         image: null,
         requestedQuantity: item.quantity,
         quantity: 0,

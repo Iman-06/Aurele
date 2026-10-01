@@ -66,30 +66,48 @@ export async function authenticateAdmin(
     return { ok: false, reason: "INVALID" };
   }
 
-  if (admin.lockedUntil && admin.lockedUntil > now) {
-    return { ok: false, reason: "LOCKED", minutesLeft: Math.ceil((admin.lockedUntil.getTime() - now.getTime()) / 60_000) };
+  const locked = (until: Date | null): LoginResult | null =>
+    until && until > now ? { ok: false, reason: "LOCKED", minutesLeft: Math.ceil((until.getTime() - now.getTime()) / 60_000) } : null;
+  const notLocked = { OR: [{ lockedUntil: null }, { lockedUntil: { lte: now } }] };
+
+  const isLocked = locked(admin.lockedUntil);
+  if (isLocked) return isLocked;
+  // A lock that has run out starts a fresh count.
+  if (admin.lockedUntil) {
+    await db.adminUser.updateMany({ where: { id: admin.id, lockedUntil: { lte: now } }, data: { failedLoginCount: 0, lockedUntil: null } });
   }
 
   const valid = await bcrypt.compare(input.password, admin.passwordHash);
   if (!valid) {
-    // A lock that has run out starts a fresh count.
-    const previous = admin.lockedUntil ? 0 : admin.failedLoginCount;
-    const failed = previous + 1;
-    const lock = failed >= MAX_FAILED_LOGINS;
-    await db.adminUser.update({
+    // Atomic increment, so many guesses sent at the same moment are all counted.
+    const { failedLoginCount } = await db.adminUser.update({
       where: { id: admin.id },
-      data: {
-        failedLoginCount: lock ? 0 : failed,
-        lockedUntil: lock ? new Date(now.getTime() + LOCKOUT_MINUTES * 60_000) : null,
-      },
+      data: { failedLoginCount: { increment: 1 } },
+      select: { failedLoginCount: true },
     });
-    if (lock) return { ok: false, reason: "LOCKED", minutesLeft: LOCKOUT_MINUTES };
+    if (failedLoginCount >= MAX_FAILED_LOGINS) {
+      await db.adminUser.updateMany({
+        where: { id: admin.id, ...notLocked },
+        data: { failedLoginCount: 0, lockedUntil: new Date(now.getTime() + LOCKOUT_MINUTES * 60_000) },
+      });
+      return { ok: false, reason: "LOCKED", minutesLeft: LOCKOUT_MINUTES };
+    }
     return { ok: false, reason: "INVALID" };
   }
 
-  await db.adminUser.update({
-    where: { id: admin.id },
+  // Only succeed if no parallel wrong guess locked the account in the meantime.
+  const res = await db.adminUser.updateMany({
+    where: { id: admin.id, ...notLocked },
     data: { failedLoginCount: 0, lockedUntil: null, lastLoginAt: now },
   });
+  if (res.count === 0) {
+    const fresh = await db.adminUser.findUniqueOrThrow({ where: { id: admin.id }, select: { lockedUntil: true } });
+    return locked(fresh.lockedUntil) ?? { ok: false, reason: "INVALID" };
+  }
   return { ok: true, admin: { id: admin.id, email: admin.email, name: admin.name, sessionVersion: admin.sessionVersion } };
+}
+
+/** "Sign out everywhere": every existing login cookie for this admin stops working. */
+export async function revokeAllSessions(db: PrismaClient, adminId: number) {
+  await db.adminUser.update({ where: { id: adminId }, data: { sessionVersion: { increment: 1 } } });
 }

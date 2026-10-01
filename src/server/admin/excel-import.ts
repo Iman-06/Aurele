@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import ExcelJS from "exceljs";
 import type { PrismaClient } from "@/generated/prisma/client";
@@ -39,8 +39,20 @@ export async function stageImport(file: File): Promise<string> {
 
   const token = randomUUID();
   await mkdir(/*turbopackIgnore: true*/ dir(), { recursive: true });
+  await sweepExpired();
   await writeFile(/*turbopackIgnore: true*/ fileFor(token), bytes);
   return token;
+}
+
+/** Delete staged uploads older than 2 hours (previews that were never applied). */
+export async function sweepExpired(now = new Date()) {
+  const names = await readdir(/*turbopackIgnore: true*/ dir()).catch(() => [] as string[]);
+  for (const name of names) {
+    if (!/^[a-f0-9-]{36}\.xlsx$/.test(name)) continue;
+    const file = path.join(/*turbopackIgnore: true*/ dir(), name);
+    const info = await stat(/*turbopackIgnore: true*/ file).catch(() => null);
+    if (info && now.getTime() - info.mtimeMs > TTL_MS) await unlink(/*turbopackIgnore: true*/ file).catch(() => {});
+  }
 }
 
 export async function runStagedImport(

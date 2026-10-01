@@ -11,6 +11,7 @@ All endpoints return JSON. Prices are in **PKR** as plain numbers. Errors always
 | 400 | `INVALID_INPUT` | bad query/body — show `message` next to the form |
 | 404 | `NOT_FOUND` | unknown product/order |
 | 409 | `OUT_OF_STOCK`, `NOT_PURCHASABLE` | someone bought it / owner hid it — show `message`, refresh the cart |
+| 429 | `TOO_MANY_REQUESTS` | more than 5 orders in an hour from the same phone or email — show `message` (it suggests WhatsApp) |
 | 500 | `SERVER_ERROR` | generic "please try again" |
 
 You can also call the functions directly from Server Components / Server Actions instead of `fetch` — each endpoint is a thin wrapper over a function in `src/server/` (named below).
@@ -103,7 +104,11 @@ Once the owner marks it shipped, the order also has `delivery: { method: "OWN" |
 
 - **COD** → `status: "NEW"`, stock already taken → show confirmation + send the confirmation email.
 - **JAZZCASH** → `status: "AWAITING_PAYMENT"`, nothing taken → redirect to JazzCash with `orderNumber` as the bill reference and `total` as the amount.
-- `409 OUT_OF_STOCK` → show `message`, send the customer back to the refreshed cart.
+- `409 OUT_OF_STOCK` → show `message`, send the customer back to the refreshed cart. Exact numbers appear only at or below the low-stock limit ("Only 2 left of …"); above it the message says "Not enough stock … choose a smaller quantity".
+- `409 NOT_PURCHASABLE` → an item was hidden/unpriced since it was added; the message is generic on purpose. `details.variantIds` lists which cart lines to remove.
+- At most **20 of one item** per order (repeated lines are added together).
+- Signed-in customers: link the order on the server with `placeOrder(db, input, { customerId })` from your session — a `customerId` in the request body is ignored.
+- Request bodies over 64 KB are rejected.
 
 ⚠️ Order numbers are sequential — **never** build a public "look up order by number" page without a secret token.
 

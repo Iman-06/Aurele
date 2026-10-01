@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/server/auth/admin-session";
 import { addOrderNote, cancelOrder, markRefunded, updateDelivery, updateOrderStatus } from "@/server/orders/orders";
+import { z } from "zod";
 import { run, type ActionState } from "../action-state";
 
 const refresh = (orderId: number) => {
@@ -21,6 +22,7 @@ const deliveryFrom = (fd: FormData) => ({
 
 export async function setStatusAction(orderId: number, status: "PROCESSING" | "SHIPPED" | "DELIVERED", _s: ActionState, fd: FormData): Promise<ActionState> {
   const admin = await requireAdmin();
+  status = z.enum(["PROCESSING", "SHIPPED", "DELIVERED"]).parse(status); // bound args come from the browser
   return run(async () => {
     await updateOrderStatus(db, { orderId, status, delivery: status === "SHIPPED" ? deliveryFrom(fd) : undefined }, admin.email);
     refresh(orderId);
