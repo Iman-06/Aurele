@@ -253,7 +253,8 @@ model OrderItem {
 
   // Snapshot at time of sale — order history stays correct even if the
   // product is renamed, repriced or deleted later.
-  priceAtSale Decimal @db.Decimal(10, 2)
+  priceAtSale Decimal  @db.Decimal(10, 2)
+  costAtSale  Decimal? @db.Decimal(10, 2) // cost price when sold — for profit reports (admin only); null if unknown
   productName String
   sku         String
   finish      Finish

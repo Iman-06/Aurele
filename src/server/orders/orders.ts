@@ -125,6 +125,7 @@ export async function placeOrder(db: PrismaClient, rawInput: PlaceOrderInput): P
         variantId: l.variantId,
         quantity: l.quantity,
         priceAtSale: l.v.sellingPrice!,
+        costAtSale: l.v.costPrice,
         productName: l.v.product.name,
         sku: l.v.sku,
         finish: l.v.finish,
