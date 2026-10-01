@@ -14,6 +14,7 @@ const NAV = [
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/inventory", label: "Inventory" },
+  { href: "/admin/homepage", label: "Homepage" },
   { href: "/admin/subscribers", label: "Subscribers" },
   { href: "/admin/settings", label: "Settings" },
 ];
@@ -30,7 +31,7 @@ export default async function AdminPanelLayout({ children }: LayoutProps<"/admin
             <Link href="/admin" className="font-serif text-xl tracking-wide">
               Lunara <span className="text-sm text-stone-500">Admin</span>
             </Link>
-            <nav className="flex gap-4 text-sm">
+            <nav className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
               {NAV.map((n) => (
                 <Link key={n.href} href={n.href} className="text-stone-600 hover:text-stone-900">
                   {n.label}

@@ -80,6 +80,27 @@ Each line returns `name`, `label` ("Aveline Pearl Drop — Gold, Blue"), `finish
 ### `POST /api/subscribe` — footer mailing list
 Body `{ "email": "…" }` → `200 { "ok": true }` (also for repeat sign-ups), `400` for an invalid email.
 
+### `GET /api/store/home` — homepage banner + promotion
+`getHomeContent()` in `src/server/content/homepage.ts`. The owner edits both in **/admin/homepage**; either can be `null` → don't render that section.
+
+```json
+{
+  "banner": {
+    "imageUrl": "/media/….jpg", "mobileImageUrl": "/media/….jpg",
+    "heading": "The Eid Edit", "subheading": "Pearls and gold for every celebration",
+    "button": { "text": "Shop now", "link": "/new-arrivals" }
+  },
+  "promotion": {
+    "title": "Eid Sale — 20% off earrings", "details": "Ends Sunday",
+    "link": { "text": "Shop the sale", "url": "/category/earrings" },
+    "url": "/category/earrings", "endsAt": "2026-10-19T19:00:00.000Z"
+  }
+}
+```
+- `mobileImageUrl` falls back to `imageUrl` — use it below ~640px. `button` / `link` are `null` when the owner didn't add one; `promotion.url` can make the whole strip clickable.
+- Links are always `/…` (this site) or `http(s)://` — safe to put in `href`.
+- Scheduling is handled by the backend: a promotion appears and disappears on its own dates. The response changes over time, so don't cache it for long (a minute is fine).
+
 ### `GET /api/store/settings`
 `{ "currency": "PKR", "shippingFee": 250, "paymentMethods": ["COD", "JAZZCASH"] }`
 

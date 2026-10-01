@@ -23,7 +23,7 @@ Website for **Lunara**, a contemporary jewellery brand in Pakistan — one Next.
 ### What Track 2 delivers
 - **Catalog API** — product list with filters, product page option tree, cart validation ([docs/API.md](docs/API.md))
 - **Orders** — COD + JazzCash, first-come-first-served stock with row locks (no overselling, no deadlocks), refunds, 24h abandonment
-- **Admin panel** (`/admin`) — dashboard (sales, profit, alerts), orders (delivery/tracking, timeline, notes, packing slip), products (finish pricing, photos), inventory (stock counts, receiving, history, Excel export/import), mailing list, settings
+- **Admin panel** (`/admin`) — dashboard (sales, profit, alerts), orders (delivery/tracking, timeline, notes, packing slip), products (finish pricing, photos), inventory (stock counts, receiving, history, Excel export/import), homepage banner + scheduled promotions, mailing list, settings
 - **Excel importer** for `data/Lunara_Inventory_System_FINAL.xlsx`
 
 ## Agreed business rules

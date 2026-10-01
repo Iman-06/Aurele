@@ -36,6 +36,12 @@ Website sales and cancellations update stock automatically — you never need to
 - Unpaid JazzCash orders wait under *Awaiting payment* (no stock held) and become *Abandoned* after 24 hours.
 - Use **Call / WhatsApp / Email** on the order to contact the customer, **notes** for anything the team should know (customers never see them), and **Print packing slip** for the parcel.
 
+## Homepage
+**Homepage** controls the website's main banner and promotion strip.
+- **Banner:** upload a wide photo (and optionally a taller one for phones), write a heading, subheading and button, then tick *Show the banner on the website*. Untick it to hide the banner without losing it.
+- **Promotions:** add a headline (e.g. "Eid Sale — 20% off earrings"), an optional extra line and button link, and optional **start/end dates** (Pakistan time). A scheduled promotion appears and disappears by itself — you can set up a sale days in advance. *Live now / Scheduled / Ended / Switched off* shows each one's state. If two are live at once, the newer one shows.
+- Links: start with `/` for a page on the site (e.g. `/category/earrings`) or paste a full `https://` address (e.g. your Instagram).
+
 ## Mailing list
 **Subscribers** shows everyone who signed up in the website footer. **Export to Excel** to use with an email tool. **Remove** someone who asks to unsubscribe.
 

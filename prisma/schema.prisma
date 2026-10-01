@@ -333,3 +333,38 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+// ------------------------------------------------------------
+// HOMEPAGE CONTENT — edited by the owner in /admin/homepage, shown by the storefront
+// via GET /api/store/home. Policy pages are written by the storefront team (not here).
+// ------------------------------------------------------------
+
+// The main homepage banner. There is only ever one row (id = 1).
+model HomeBanner {
+  id             Int      @id @default(1)
+  imageUrl       String? // wide photo (desktop)
+  mobileImageUrl String? // optional tall photo for phones; falls back to imageUrl
+  heading        String?
+  subheading     String?
+  buttonText     String?
+  buttonLink     String? // "/collections/earrings" or "https://…"
+  isActive       Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+}
+
+// Promotion strip / section. Several can exist (e.g. an Eid sale set up in advance);
+// the website shows the one that is switched on and inside its start/end window.
+model Promotion {
+  id        Int       @id @default(autoincrement())
+  title     String // e.g. "Eid Sale — 20% off earrings"
+  details   String? // optional extra line
+  linkText  String?
+  linkUrl   String?
+  isActive  Boolean   @default(true)
+  startsAt  DateTime? // null = immediately
+  endsAt    DateTime? // null = until switched off
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+}

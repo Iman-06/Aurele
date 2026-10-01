@@ -12,7 +12,7 @@ export async function resetDb() {
   }
   await testDb.$executeRawUnsafe(`
     TRUNCATE "StockMovement", "OrderItem", "Order", "ProductImage", "Variant",
-             "Product", "Customer", "AdminUser", "Subscriber", "Setting"
+             "Product", "Customer", "AdminUser", "Subscriber", "Setting", "HomeBanner", "Promotion"
     RESTART IDENTITY CASCADE;
   `);
 }
