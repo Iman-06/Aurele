@@ -99,6 +99,8 @@ Body `{ "email": "…" }` → `200 { "ok": true }` (also for repeat sign-ups), `
 ```
 → `201` with the order (no internal ids): `orderNumber`, `status`, `paymentMethod`, `paymentStatus`, `customer`, `items[] {name,label,finish,colour,size,quantity,unitPrice,lineTotal}`, `subtotal`, `shippingFee`, `total`.
 
+Once the owner marks it shipped, the order also has `delivery: { method: "OWN" | "COURIER", courier, trackingNumber, shippedAt }` (`null` before shipping; `trackingNumber` may be `null` — own delivery never has one). Use it in the "your order is on its way" email.
+
 - **COD** → `status: "NEW"`, stock already taken → show confirmation + send the confirmation email.
 - **JAZZCASH** → `status: "AWAITING_PAYMENT"`, nothing taken → redirect to JazzCash with `orderNumber` as the bill reference and `total` as the amount.
 - `409 OUT_OF_STOCK` → show `message`, send the customer back to the refreshed cart.

@@ -132,6 +132,9 @@ export async function placeOrder(db: PrismaClient, rawInput: PlaceOrderInput): P
         size: l.v.size,
       })),
     });
+    await tx.orderEvent.create({
+      data: { orderId: order.id, type: "PLACED", actor: "customer", message: isCod ? "Cash on Delivery" : "JazzCash — waiting for payment" },
+    });
 
     return tx.order.findUniqueOrThrow({ where: { id: order.id }, include: orderInclude });
   }, TX_OPTIONS);
@@ -196,6 +199,7 @@ export async function confirmJazzCashPayment(
         data: { status: "NEW", paymentStatus: "PAID", paidAt: now, paymentRef: input.paymentRef, stockDeductedAt: now },
         include: orderInclude,
       });
+      await tx.orderEvent.create({ data: { orderId: order.id, type: "PAID", actor: "JazzCash", message: `Paid ${order.total.toString()} · ref ${input.paymentRef}` } });
       return { outcome: "PAID", order: paid };
     }
 
@@ -211,28 +215,84 @@ export async function confirmJazzCashPayment(
       },
       include: orderInclude,
     });
+    await tx.orderEvent.create({
+      data: { orderId: order.id, type: "REFUND_NEEDED", actor: "JazzCash", message: `Paid (ref ${input.paymentRef}) but ${outOfStock(shortages).message}. Refund the customer.` },
+    });
     return { outcome: "REFUND_NEEDED", order: refund, shortages };
   }, TX_OPTIONS);
 }
 
+
 /** JazzCash orders never paid within 24h → ABANDONED (no stock involved). Run on a timer. */
 export async function abandonUnpaidOrders(db: PrismaClient, now = new Date()) {
   const cutoff = new Date(now.getTime() - ABANDON_AFTER_HOURS * 3600_000);
-  const res = await db.order.updateMany({
-    where: { status: "AWAITING_PAYMENT", paymentStatus: "UNPAID", createdAt: { lt: cutoff } },
-    data: { status: "ABANDONED" },
+  return db.$transaction(async (tx) => {
+    const stale = await tx.order.findMany({
+      where: { status: "AWAITING_PAYMENT", paymentStatus: "UNPAID", createdAt: { lt: cutoff } },
+      select: { id: true },
+    });
+    if (!stale.length) return 0;
+    const ids = stale.map((o) => o.id);
+    const res = await tx.order.updateMany({ where: { id: { in: ids }, status: "AWAITING_PAYMENT" }, data: { status: "ABANDONED" } });
+    await tx.orderEvent.createMany({
+      data: ids.map((orderId) => ({ orderId, type: "ABANDONED" as const, actor: "system", message: `Not paid within ${ABANDON_AFTER_HOURS} hours` })),
+    });
+    return res.count;
   });
-  return res.count;
 }
 
 // ------------------------------------------------------------
-// Owner actions (admin panel)
+// Owner actions (admin panel). `actor` = the admin's email, shown in the timeline.
 // ------------------------------------------------------------
 
-/** New → Processing → Shipped → Delivered. Forward only (skipping ahead is allowed). */
+export const COURIERS = ["TCS", "Leopards", "M&P", "PostEx", "Trax", "Call Courier", "BlueEx", "Pakistan Post", "Other"] as const;
+
+export const deliveryInput = z
+  .object({
+    method: z.enum(["OWN", "COURIER"], { error: "Choose own delivery or a courier" }),
+    courier: z.string().trim().max(60).optional().transform((v) => v || null),
+    trackingNumber: z.string().trim().max(60).optional().transform((v) => v || null),
+    riderInfo: z.string().trim().max(120).optional().transform((v) => v || null),
+  })
+  .superRefine((d, ctx) => {
+    if (d.method === "COURIER" && !d.courier) ctx.addIssue({ code: "custom", message: "Choose the courier company" });
+  })
+  .transform((d) =>
+    d.method === "OWN"
+      ? { deliveryMethod: "OWN" as const, courier: null, trackingNumber: null, riderInfo: d.riderInfo }
+      : { deliveryMethod: "COURIER" as const, courier: d.courier, trackingNumber: d.trackingNumber, riderInfo: null },
+  );
+export type DeliveryInput = z.input<typeof deliveryInput>;
+
+function parseDelivery(raw: unknown) {
+  const r = deliveryInput.safeParse(raw ?? {}); // nothing chosen → "Choose own delivery or a courier"
+  if (!r.success) throw new DomainError("INVALID_INPUT", r.error.issues[0]?.message ?? "Invalid delivery details");
+  return r.data;
+}
+
+function describeDelivery(d: ReturnType<typeof parseDelivery>) {
+  if (d.deliveryMethod === "OWN") return `Own delivery${d.riderInfo ? ` (${d.riderInfo})` : ""}`;
+  return `${d.courier}${d.trackingNumber ? ` · tracking ${d.trackingNumber}` : " · no tracking number yet"}`;
+}
+
+export const STATUS_LABEL: Record<OrderStatus, string> = {
+  AWAITING_PAYMENT: "Awaiting payment",
+  NEW: "New",
+  PROCESSING: "Processing",
+  SHIPPED: "Shipped",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+  ABANDONED: "Abandoned",
+};
+
+/**
+ * New → Processing → Shipped → Delivered. Forward only (skipping ahead is allowed).
+ * Marking Shipped needs the delivery details (own delivery, or courier + optional tracking).
+ */
 export async function updateOrderStatus(
   db: PrismaClient,
-  input: { orderId: number; status: "PROCESSING" | "SHIPPED" | "DELIVERED" },
+  input: { orderId: number; status: "PROCESSING" | "SHIPPED" | "DELIVERED"; delivery?: unknown },
+  actor = "admin",
 ) {
   const order = await db.order.findUnique({ where: { id: input.orderId } });
   if (!order) throw new DomainError("NOT_FOUND", "Order not found");
@@ -240,21 +300,52 @@ export async function updateOrderStatus(
   const from = FLOW.indexOf(order.status);
   const to = FLOW.indexOf(input.status);
   if (from === -1 || to <= from) {
-    throw new DomainError("INVALID_TRANSITION", `Can't move an order from ${order.status} to ${input.status}`);
+    throw new DomainError("INVALID_TRANSITION", `Can't move an order from ${STATUS_LABEL[order.status]} to ${STATUS_LABEL[input.status]}`);
   }
 
-  // COD money is collected on delivery
-  const codCollected = input.status === "DELIVERED" && order.paymentMethod === "COD" && order.paymentStatus === "UNPAID";
-  const res = await db.order.updateMany({
-    where: { id: order.id, status: order.status }, // fails if someone else changed it meanwhile
-    data: { status: input.status, ...(codCollected ? { paymentStatus: "PAID", paidAt: new Date() } : {}) },
+  const now = new Date();
+  const delivery = input.status === "SHIPPED" ? parseDelivery(input.delivery) : null;
+  const data: Prisma.OrderUpdateManyMutationInput = { status: input.status };
+  if (delivery) Object.assign(data, delivery, { shippedAt: now });
+  if (input.status === "DELIVERED") {
+    data.deliveredAt = now;
+    if (!order.shippedAt) data.shippedAt = now;
+    // COD money is collected on delivery
+    if (order.paymentMethod === "COD" && order.paymentStatus === "UNPAID") Object.assign(data, { paymentStatus: "PAID", paidAt: now });
+  }
+
+  return db.$transaction(async (tx) => {
+    const res = await tx.order.updateMany({ where: { id: order.id, status: order.status }, data }); // fails if changed meanwhile
+    if (res.count === 0) throw new DomainError("INVALID_TRANSITION", "Order was changed by someone else — please reload");
+    const extra = delivery
+      ? ` — ${describeDelivery(delivery)}`
+      : input.status === "DELIVERED" && order.paymentMethod === "COD"
+        ? " — cash collected"
+        : "";
+    await tx.orderEvent.create({
+      data: { orderId: order.id, type: "STATUS_CHANGED", actor, message: `${STATUS_LABEL[order.status]} → ${STATUS_LABEL[input.status]}${extra}` },
+    });
+    return tx.order.findUniqueOrThrow({ where: { id: order.id }, include: orderInclude });
   });
-  if (res.count === 0) throw new DomainError("INVALID_TRANSITION", "Order was changed by someone else — please reload");
-  return db.order.findUniqueOrThrow({ where: { id: order.id }, include: orderInclude });
+}
+
+/** Change delivery details after shipping (e.g. add the courier's tracking number later). */
+export async function updateDelivery(db: PrismaClient, input: { orderId: number; delivery: unknown }, actor = "admin") {
+  const delivery = parseDelivery(input.delivery);
+  const order = await db.order.findUnique({ where: { id: input.orderId } });
+  if (!order) throw new DomainError("NOT_FOUND", "Order not found");
+  if (order.status !== "SHIPPED" && order.status !== "DELIVERED") {
+    throw new DomainError("INVALID_TRANSITION", "Delivery details can be added once the order is shipped");
+  }
+  return db.$transaction(async (tx) => {
+    await tx.order.update({ where: { id: order.id }, data: delivery });
+    await tx.orderEvent.create({ data: { orderId: order.id, type: "SHIPPING_UPDATED", actor, message: describeDelivery(delivery) } });
+    return tx.order.findUniqueOrThrow({ where: { id: order.id }, include: orderInclude });
+  });
 }
 
 /** Cancel before shipping. Returns stock if it was taken; paid JazzCash orders become REFUND_NEEDED. */
-export async function cancelOrder(db: PrismaClient, input: { orderId: number; reason: string }) {
+export async function cancelOrder(db: PrismaClient, input: { orderId: number; reason: string }, actor = "admin") {
   const reason = input.reason.trim();
   if (!reason) throw new DomainError("INVALID_INPUT", "Please give a reason for cancelling");
 
@@ -264,30 +355,53 @@ export async function cancelOrder(db: PrismaClient, input: { orderId: number; re
     const order = await tx.order.findUniqueOrThrow({ where: { id: input.orderId } });
 
     if (!CANCELLABLE.includes(order.status)) {
-      throw new DomainError("INVALID_TRANSITION", `A ${order.status.toLowerCase()} order can't be cancelled`);
+      throw new DomainError("INVALID_TRANSITION", `A ${STATUS_LABEL[order.status].toLowerCase()} order can't be cancelled`);
     }
     if (order.stockDeductedAt) await returnStock(tx, order.id, reason);
+    const refund = order.paymentStatus === "PAID";
 
-    return tx.order.update({
+    const updated = await tx.order.update({
       where: { id: order.id },
       data: {
         status: "CANCELLED",
         cancelReason: reason,
         cancelledAt: new Date(),
         stockDeductedAt: null,
-        ...(order.paymentStatus === "PAID" ? { paymentStatus: "REFUND_NEEDED" as const } : {}),
+        ...(refund ? { paymentStatus: "REFUND_NEEDED" as const } : {}),
       },
       include: orderInclude,
     });
+    await tx.orderEvent.create({
+      data: {
+        orderId: order.id,
+        type: "CANCELLED",
+        actor,
+        message: `${reason}${order.stockDeductedAt ? " — items returned to stock" : ""}${refund ? " — refund needed" : ""}`,
+      },
+    });
+    return updated;
   }, TX_OPTIONS);
 }
 
 /** Owner has refunded the customer (e.g. via the JazzCash merchant portal). */
-export async function markRefunded(db: PrismaClient, input: { orderId: number }) {
-  const res = await db.order.updateMany({
-    where: { id: input.orderId, paymentStatus: "REFUND_NEEDED" },
-    data: { paymentStatus: "REFUNDED" },
+export async function markRefunded(db: PrismaClient, input: { orderId: number; note?: string }, actor = "admin") {
+  return db.$transaction(async (tx) => {
+    const res = await tx.order.updateMany({
+      where: { id: input.orderId, paymentStatus: "REFUND_NEEDED" },
+      data: { paymentStatus: "REFUNDED" },
+    });
+    if (res.count === 0) throw new DomainError("INVALID_TRANSITION", "This order is not waiting for a refund");
+    await tx.orderEvent.create({ data: { orderId: input.orderId, type: "REFUNDED", actor, message: input.note?.trim() || null } });
+    return tx.order.findUniqueOrThrow({ where: { id: input.orderId }, include: orderInclude });
   });
-  if (res.count === 0) throw new DomainError("INVALID_TRANSITION", "This order is not waiting for a refund");
-  return db.order.findUniqueOrThrow({ where: { id: input.orderId }, include: orderInclude });
+}
+
+/** Internal note on the order timeline (never shown to the customer). */
+export async function addOrderNote(db: PrismaClient, input: { orderId: number; note: string }, actor = "admin") {
+  const note = input.note.trim();
+  if (!note) throw new DomainError("INVALID_INPUT", "Write a note first");
+  if (note.length > 2000) throw new DomainError("INVALID_INPUT", "Note is too long");
+  const exists = await db.order.findUnique({ where: { id: input.orderId }, select: { id: true } });
+  if (!exists) throw new DomainError("NOT_FOUND", "Order not found");
+  return db.orderEvent.create({ data: { orderId: input.orderId, type: "NOTE", actor, message: note } });
 }

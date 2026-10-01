@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 // Sections are added as the admin steps are built (products, inventory, orders).
 const NAV = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/orders", label: "Orders" },
   { href: "/admin/products", label: "Products" },
   { href: "/admin/inventory", label: "Inventory" },
   { href: "/admin/settings", label: "Settings" },
@@ -22,7 +23,7 @@ export default async function AdminPanelLayout({ children }: LayoutProps<"/admin
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
-      <header className="border-b border-stone-200 bg-white">
+      <header className="border-b border-stone-200 bg-white print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-6">
             <Link href="/admin" className="font-serif text-xl tracking-wide">

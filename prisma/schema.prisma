@@ -51,6 +51,25 @@ enum PaymentMethod {
   JAZZCASH
 }
 
+// How a shipped order is delivered. Own delivery has no tracking number.
+enum DeliveryMethod {
+  OWN
+  COURIER
+}
+
+// Order timeline entries (shown on the admin order page)
+enum OrderEventType {
+  PLACED
+  PAID
+  REFUND_NEEDED
+  STATUS_CHANGED
+  SHIPPING_UPDATED
+  CANCELLED
+  REFUNDED
+  ABANDONED
+  NOTE
+}
+
 enum PaymentStatus {
   UNPAID // COD until delivered, or JazzCash not yet paid
   PAID
@@ -204,11 +223,20 @@ model Order {
   cancelReason String?
   cancelledAt  DateTime?
 
+  // Delivery (filled in when the owner marks the order Shipped)
+  deliveryMethod DeliveryMethod?
+  courier        String? // e.g. "TCS", "Leopards" — only for COURIER
+  trackingNumber String? // given by the courier (CN); none for own delivery
+  riderInfo      String? // own delivery: rider name/phone (optional)
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   items          OrderItem[]
   stockMovements StockMovement[]
+  events         OrderEvent[]
 
   @@index([status, createdAt])
   @@index([paymentStatus])
@@ -231,6 +259,22 @@ model OrderItem {
   finish      Finish
   colour      String
   size        String
+}
+
+// ------------------------------------------------------------
+// ORDER EVENT — timeline of what happened to an order and who did it.
+// ------------------------------------------------------------
+
+model OrderEvent {
+  id        Int            @id @default(autoincrement())
+  order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   Int
+  type      OrderEventType
+  message   String?
+  actor     String? // admin email, "customer", "JazzCash" or "system"
+  createdAt DateTime       @default(now())
+
+  @@index([orderId, createdAt])
 }
 
 // ------------------------------------------------------------

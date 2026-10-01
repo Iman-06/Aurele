@@ -316,7 +316,7 @@ describe("order status (owner)", () => {
 
     expect((await updateOrderStatus(db, { orderId: o.id, status: "PROCESSING" })).status).toBe("PROCESSING");
     await expectDomainError(updateOrderStatus(db, { orderId: o.id, status: "PROCESSING" }), "INVALID_TRANSITION");
-    expect((await updateOrderStatus(db, { orderId: o.id, status: "SHIPPED" })).status).toBe("SHIPPED");
+    expect((await updateOrderStatus(db, { orderId: o.id, status: "SHIPPED", delivery: { method: "OWN" } })).status).toBe("SHIPPED");
 
     const delivered = await updateOrderStatus(db, { orderId: o.id, status: "DELIVERED" });
     expect(delivered).toMatchObject({ status: "DELIVERED", paymentStatus: "PAID" });
@@ -326,7 +326,7 @@ describe("order status (owner)", () => {
   it("can skip ahead (New → Shipped) but not ship an unpaid JazzCash order", async () => {
     const a = await makeVariant({ quantity: 5 });
     const o = await placeOrder(db, cod([{ variantId: a.id, quantity: 1 }]));
-    expect((await updateOrderStatus(db, { orderId: o.id, status: "SHIPPED" })).status).toBe("SHIPPED");
+    expect((await updateOrderStatus(db, { orderId: o.id, status: "SHIPPED", delivery: { method: "OWN" } })).status).toBe("SHIPPED");
 
     const j = await placeOrder(db, jazz([{ variantId: a.id, quantity: 1 }]));
     await expectDomainError(updateOrderStatus(db, { orderId: j.id, status: "PROCESSING" }), "INVALID_TRANSITION");
@@ -355,7 +355,7 @@ describe("cancelling (owner)", () => {
     expect(await qty(a.id)).toBe(5); // returned exactly once
 
     const s = await placeOrder(db, cod([{ variantId: a.id, quantity: 1 }]));
-    await updateOrderStatus(db, { orderId: s.id, status: "SHIPPED" });
+    await updateOrderStatus(db, { orderId: s.id, status: "SHIPPED", delivery: { method: "OWN" } });
     await expectDomainError(cancelOrder(db, { orderId: s.id, reason: "x" }), "INVALID_TRANSITION");
     expect(await qty(a.id)).toBe(4);
   });

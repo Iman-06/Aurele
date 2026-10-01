@@ -68,3 +68,7 @@ Other scripts: `npm test`, `npm run typecheck`, `npm run lint`, `npm run db:stud
 - Create the owner's login (or reset a password) — run it yourself in a terminal: `npm run admin:create`
 - Sign in at `/admin/login`. Sessions last 7 days; 5 wrong passwords lock the account for 15 minutes.
 - Protect every admin page / Server Action / API route with `requireAdmin()` or `getAdmin()` from `src/server/auth/admin-session.ts`. `src/proxy.ts` is only a fast first gate.
+
+## Gotcha: restart `npm run dev` after a schema change
+
+After `prisma migrate` / `prisma generate`, **restart the dev server**. In development the Prisma client is kept in memory between hot reloads, so a running server keeps the old client and new tables/fields fail with errors like `Cannot read properties of undefined (reading 'create')`. Production is not affected.

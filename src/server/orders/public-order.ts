@@ -29,6 +29,9 @@ export function toPublicOrder(o: OrderWithItems) {
       unitPrice: n(i.priceAtSale),
       lineTotal: n(i.priceAtSale) * i.quantity,
     })),
+    delivery: o.deliveryMethod
+      ? { method: o.deliveryMethod, courier: o.courier, trackingNumber: o.trackingNumber, shippedAt: o.shippedAt?.toISOString() ?? null }
+      : null,
     subtotal: n(o.subtotal),
     shippingFee: n(o.shippingFee),
     total: n(o.total),
