@@ -89,5 +89,5 @@ tests/         integration tests against the test database
 ## Rules for code in this repo
 - **Admin security:** every admin page, Server Action and `/api/admin/*` route must call `requireAdmin()` / `getAdmin()` (`src/server/auth/admin-session.ts`). `src/proxy.ts` is only a fast first gate.
 - **Stock changes go through `src/server/`** (`takeStock`, `returnStock`, `adjustStock`, `receiveStock`, the importer) so every change is logged in the stock history.
-- **Next.js 16 differs from older versions** — read `node_modules/next/dist/docs/` before writing Next code (see `AGENTS.md`).
+- **Next.js 16 differs from older versions** (e.g. middleware is now `proxy.ts`, `params`/`searchParams`/`cookies()` are async) — check the docs bundled in `node_modules/next/dist/docs/` before writing Next code.
 - **Restart `npm run dev` after any schema change.** In development the Prisma client is cached between hot reloads, so a running server keeps the old client (errors like `Cannot read properties of undefined (reading 'create')`). Production is not affected.
