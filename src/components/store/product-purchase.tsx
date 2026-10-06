@@ -19,18 +19,21 @@ export function ProductPurchase({ product }: { product: ProductDetail }) {
   const [finishIndex, setFinishIndex] = useState(0);
   const [colourIndex, setColourIndex] = useState(0);
   const [variantIndex, setVariantIndex] = useState(0);
+  const [imageIndex, setImageIndex] = useState(0);
   const [added, setAdded] = useState(false);
 
   const finish = product.finishes[finishIndex] ?? product.finishes[0];
   const colour = finish?.colours[Math.min(colourIndex, Math.max(finish.colours.length - 1, 0))];
   const variant = colour?.variants[Math.min(variantIndex, Math.max(colour.variants.length - 1, 0))];
-  const images = colour?.images.length ? colour.images : product.images;
-  const photo = images[0];
+  const images = colour ? colour.images : product.images;
+  const activeIndex = images.length ? Math.min(imageIndex, images.length - 1) : 0;
+  const photo = images[activeIndex];
 
   function chooseFinish(index: number) {
     setFinishIndex(index);
     setColourIndex(0);
     setVariantIndex(0);
+    setImageIndex(0);
     setAdded(false);
   }
 
@@ -51,11 +54,32 @@ export function ProductPurchase({ product }: { product: ProductDetail }) {
 
   return (
     <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
-      <div className="relative aspect-[4/5] overflow-hidden bg-surface">
-        {photo ? (
-          <Image src={photo.url} alt={photo.alt} fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" priority />
-        ) : (
-          <ProductPlaceholder category={product.category} />
+      <div>
+        <div className="relative aspect-[4/5] overflow-hidden bg-surface">
+          {photo ? (
+            <Image key={photo.url} src={photo.url} alt={photo.alt} fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" priority />
+          ) : (
+            <ProductPlaceholder category={product.category} />
+          )}
+        </div>
+        {images.length > 1 && (
+          <div className="mt-3 flex gap-3">
+            {images.map((image, index) => {
+              const selected = index === activeIndex;
+              return (
+                <button
+                  key={`${image.url}-${index}`}
+                  type="button"
+                  aria-label={`Photo ${index + 1} of ${images.length}`}
+                  aria-current={selected ? "true" : undefined}
+                  className={`relative size-16 overflow-hidden border bg-surface ${selected ? "border-foreground" : "border-line"}`}
+                  onClick={() => setImageIndex(index)}
+                >
+                  <Image src={image.url} alt="" fill sizes="64px" className="object-cover" />
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -96,6 +120,7 @@ export function ProductPurchase({ product }: { product: ProductDetail }) {
                         onClick={() => {
                           setColourIndex(index);
                           setVariantIndex(0);
+                          setImageIndex(0);
                           setAdded(false);
                         }}
                       >

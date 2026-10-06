@@ -3,22 +3,25 @@ import { Policy, PolicySection } from "@/components/store/policy";
 
 export const metadata: Metadata = {
   title: "Shipping — Aurele",
-  description: "Flat Rs 250 shipping anywhere in Pakistan. Cash on Delivery or JazzCash.",
+  description: "How Aurele packs, processes, and delivers orders in Pakistan.",
 };
 
 export default function ShippingPage() {
   return (
     <Policy title="Shipping">
-      <PolicySection heading="Fee">
-        <p>Shipping is a flat Rs 250 anywhere in Pakistan, added to every order.</p>
+      <p className="text-muted">
+        At Aurele, we ensure that your exquisite jewelry reaches you safely, securely, and on time. All orders are carefully packaged with premium protective materials to maintain the pristine condition of your purchase.
+      </p>
+      <PolicySection heading="Processing time">
+        <p>All orders are processed within 1–2 business days of confirmation.</p>
       </PolicySection>
-      <PolicySection heading="Delivery">
-        <p>We deliver the order ourselves, or we send it by courier.</p>
-        <p>A courier order includes a tracking number once it has shipped. Our own delivery does not.</p>
+      <PolicySection heading="Delivery time">
+        <p>In Pakistan, you can expect your order to be delivered within 3 to 5 working days for major cities after it has been dispatched. Deliveries to remote areas might require additional time. Please ensure you are available at the contact number provided for our team to reach you.</p>
+        <p>For high-demand periods, festivals, or special collections, delivery may take slightly longer.</p>
       </PolicySection>
-      <PolicySection heading="Payment">
-        <p>You can pay by Cash on Delivery or JazzCash.</p>
-        <p>We do not hold a piece aside while you browse. Cash on Delivery takes it from stock when you place the order. JazzCash takes it when the payment is confirmed.</p>
+      <PolicySection heading="Order tracking">
+        <p>Once your order is shipped, you will receive a tracking number to monitor your shipment.</p>
+        <p>Aurele is not responsible for delays caused by courier services beyond our control.</p>
       </PolicySection>
     </Policy>
   );

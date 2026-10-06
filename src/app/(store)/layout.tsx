@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { CartIcon } from "@/components/cart/cart-icon";
+import { MobileNav } from "@/components/store/mobile-nav";
 import { SearchForm } from "@/components/store/search-form";
 
 const POLICIES = [
@@ -12,6 +13,7 @@ const POLICIES = [
 
 const NAV = [
   { href: "/", label: "Shop" },
+  { href: "/new-arrivals", label: "New Arrivals" },
   { href: "/earrings", label: "Earrings" },
   { href: "/rings", label: "Rings" },
   { href: "/bracelets", label: "Bracelets" },
@@ -24,18 +26,19 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <header className="border-b border-line bg-background">
         <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-8 sm:px-12">
           <div className="flex items-center gap-4">
+            <MobileNav />
             <Link href="/" className="shrink-0 text-sm tracking-[0.42em] uppercase">
               Aurele
             </Link>
             <div className="flex min-w-0 flex-1 items-center justify-end gap-4 sm:gap-8">
               <span className="hidden text-[0.65rem] tracking-[0.22em] text-gold uppercase lg:inline">Fine jewelry</span>
-              <Suspense fallback={<div className="h-10 min-w-0 flex-1 sm:max-w-xs" />}>
-                <SearchForm />
+              <Suspense fallback={<div className="hidden h-10 min-w-0 flex-1 sm:max-w-xs lg:block" />}>
+                <SearchForm className="hidden lg:block" />
               </Suspense>
               <CartIcon />
             </div>
           </div>
-          <nav className="flex flex-wrap gap-x-8 gap-y-3 text-[0.7rem] tracking-[0.18em] uppercase">
+          <nav className="hidden flex-wrap gap-x-8 gap-y-3 text-[0.7rem] tracking-[0.18em] uppercase lg:flex">
             {NAV.map((item) => (
               <Link key={item.href} href={item.href} className="text-muted transition-colors hover:text-foreground">
                 {item.label}
@@ -59,7 +62,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
                 </Link>
               ))}
             </nav>
-            <p className="text-[0.7rem] tracking-[0.16em] text-muted uppercase">Karachi</p>
+            <p className="text-[0.7rem] tracking-[0.16em] text-muted uppercase">Lahore</p>
           </div>
         </div>
       </footer>

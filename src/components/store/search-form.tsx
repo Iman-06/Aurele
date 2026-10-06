@@ -3,11 +3,11 @@
 import { useSearchParams } from "next/navigation";
 
 /** Submits to /search?q= — the catalog search for a product name. */
-export function SearchForm() {
+export function SearchForm({ className = "" }: { className?: string }) {
   const current = useSearchParams().get("q") ?? "";
 
   return (
-    <form action="/search" method="get" role="search" className="min-w-0 flex-1 sm:max-w-xs">
+    <form action="/search" method="get" role="search" className={`min-w-0 flex-1 sm:max-w-xs ${className}`.trim()}>
       <label htmlFor="store-search" className="sr-only">
         Search
       </label>

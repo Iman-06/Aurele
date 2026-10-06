@@ -11,17 +11,11 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Aurele — Fine jewelry",
-  description: "Quiet pieces, made to be worn every day. Shop earrings, rings, bracelets, and necklaces from Aurele in Karachi.",
+  description: "Quiet pieces, made to be worn every day. Shop earrings, rings, bracelets, and necklaces from Aurele in Lahore.",
 };
 
 export default async function HomePage() {
-  const [home, flagged] = await Promise.all([
-    getHomeContent(db),
-    listProducts(db, { newArrivals: true, pageSize: 8 }),
-  ]);
-  // No design is flagged as a new arrival yet, so the section falls back to the
-  // newest priced, visible pieces rather than rendering an empty grid.
-  const arrivals = flagged.items.length ? flagged.items : (await listProducts(db, { pageSize: 8 })).items;
+  const [home, arrivals] = await Promise.all([getHomeContent(db), listProducts(db, { sort: "newest", pageSize: 8 })]);
   const { banner, promotion } = home;
 
   return (
@@ -79,8 +73,13 @@ export default async function HomePage() {
       )}
 
       <section className="mx-auto w-full max-w-6xl px-8 py-16 sm:px-12">
-        <h2 className="mb-12 text-[0.7rem] tracking-[0.22em] text-muted uppercase">New Arrivals</h2>
-        <ProductGrid products={arrivals} />
+        <div className="mb-12 flex items-baseline justify-between gap-6">
+          <h2 className="text-[0.7rem] tracking-[0.22em] text-muted uppercase">New Arrivals</h2>
+          <Link href="/new-arrivals" className="text-[0.7rem] tracking-[0.18em] uppercase hover:text-gold">
+            View all
+          </Link>
+        </div>
+        <ProductGrid products={arrivals.items} />
       </section>
 
       <section className="mx-auto w-full max-w-6xl px-8 pb-20 sm:px-12">

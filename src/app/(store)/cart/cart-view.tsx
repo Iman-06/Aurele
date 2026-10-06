@@ -5,15 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { selectItems, useCartHydrated, useCartStore } from "@/lib/cart-store";
-import {
-  FALLBACK_SHIPPING_FEE,
-  MAX_PER_ITEM,
-  NO_COLOUR,
-  maxQuantityFor,
-  type CartItem,
-  type CartLine,
-  type CartSummary,
-} from "@/lib/cart-types";
+import { MAX_PER_ITEM, NO_COLOUR, maxQuantityFor, type CartItem, type CartLine, type CartSummary } from "@/lib/cart-types";
 import { formatRs } from "@/lib/format";
 
 const PROBLEM_MESSAGES: Record<NonNullable<CartLine["problem"]>, string> = {
@@ -112,9 +104,8 @@ export function CartView() {
   }
 
   // Live figures from the database win; the stored prices are a display-only fallback.
+  // Shipping is shown at checkout, not here.
   const subtotal = summary?.subtotal ?? items.reduce((s, i) => s + i.priceAtAdd * i.quantity, 0);
-  const shippingFee = summary?.shippingFee ?? FALLBACK_SHIPPING_FEE;
-  const total = summary?.total ?? subtotal + shippingFee;
   const checkoutBlocked = summary?.lines.some((l) => l.problem === "OUT_OF_STOCK" || l.problem === "UNAVAILABLE");
 
   return (
@@ -208,18 +199,10 @@ export function CartView() {
           </p>
         )}
 
-        <dl className="space-y-3 border-y border-line py-6 text-sm">
+        <dl className="border-y border-line py-6 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted">Subtotal</dt>
             <dd className="tabular-nums">{formatRs(subtotal)}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted">Shipping</dt>
-            <dd className="tabular-nums">{formatRs(shippingFee)}</dd>
-          </div>
-          <div className="flex justify-between pt-3 text-sm">
-            <dt className="tracking-[0.16em] uppercase">Total</dt>
-            <dd className="tabular-nums">{formatRs(total)}</dd>
           </div>
         </dl>
 

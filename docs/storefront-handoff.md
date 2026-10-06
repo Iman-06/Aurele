@@ -30,6 +30,8 @@ Actions: `addItem`, `removeItem`, `updateQuantity`, `clearCart`. `subtotal()` an
 
 Route: `/cart` (`src/app/(store)/cart/page.tsx`).
 
-When the page opens, and again whenever a quantity changes, it `POST`s the stored lines to `/api/cart/validate` as `{ variantId, quantity, price: priceAtAdd }`. The response is what the page shows: current `unitPrice`, `subtotal`, `shippingFee` (Rs 250 when the cart is not empty), and `total`. If the server clamps a line (`QUANTITY_REDUCED`), that lower quantity is written back into the store. `OUT_OF_STOCK` and `UNAVAILABLE` lines stay visible with a message, and checkout stays blocked until they are removed.
+When the page opens, and again whenever a quantity changes, it `POST`s the stored lines to `/api/cart/validate` as `{ variantId, quantity, price: priceAtAdd }`. The cart page shows each line’s current `unitPrice` and the item `subtotal` only. It does not show shipping. `shippingFee` and `total` still come back from the validate call — show those on the checkout page, not on `/cart`, so the fee is not stated twice.
+
+If the server clamps a line (`QUANTITY_REDUCED`), that lower quantity is written back into the store. `OUT_OF_STOCK` and `UNAVAILABLE` lines stay visible with a message, and checkout stays blocked until they are removed.
 
 Place the order from `items` as `{ variantId, quantity }` only. Ignore `priceAtAdd`.

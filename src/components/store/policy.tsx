@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Shared layout for the placeholder policy pages. Copy lives in each page so the owner can edit it there. */
+/** Shared layout for the policy pages. Copy lives in each page. */
 export function Policy({ title, children }: { title: string; children: ReactNode }) {
   return (
     <article className="mx-auto w-full max-w-2xl px-8 py-16 sm:px-12">
