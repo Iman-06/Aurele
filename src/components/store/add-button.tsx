@@ -7,8 +7,9 @@ import { useCartStore } from "@/lib/cart-store";
 import type { ProductDetail } from "@/server/catalog/catalog";
 
 /** Adds the only purchasable variant. If the detail turns out to have several, open the product page. */
-export function AddButton({ slug }: { slug: string }) {
+export function AddButton({ slug, className = "" }: { slug: string; className?: string }) {
   const addItem = useCartStore((s) => s.addItem);
+  const openMiniCart = useCartStore((s) => s.openMiniCart);
   const router = useRouter();
   const [state, setState] = useState<"idle" | "adding" | "added" | "error">("idle");
 
@@ -36,6 +37,7 @@ export function AddButton({ slug }: { slug: string }) {
         photoRef: colour.images[0]?.url ?? product.images[0]?.url ?? null,
         priceAtAdd: variant.price,
       });
+      openMiniCart();
       setState("added");
     } catch {
       setState("error");
@@ -43,7 +45,7 @@ export function AddButton({ slug }: { slug: string }) {
   }
 
   return (
-    <Button variant="add" onClick={() => void add()} disabled={state === "adding" || state === "added"} className="disabled:opacity-40">
+    <Button variant="add" onClick={() => void add()} disabled={state === "adding" || state === "added"} className={`disabled:opacity-40 ${className}`.trim()}>
       {state === "adding" ? "Adding" : state === "added" ? "Added" : state === "error" ? "Try again" : "Add"}
     </Button>
   );

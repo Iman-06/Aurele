@@ -9,6 +9,9 @@ export const STORE_CATEGORIES = [
   { slug: "necklaces", label: "Necklace", query: "necklaces" },
 ] as const;
 
+/** Header “Shop by Categories” menu. Bracelets stay on /bracelets and in the Store grid. */
+export const HEADER_CATEGORIES = [STORE_CATEGORIES[0], STORE_CATEGORIES[1], STORE_CATEGORIES[3]] as const;
+
 export type StoreCategory = (typeof STORE_CATEGORIES)[number];
 
 const BY_SLUG = new Map<string, StoreCategory>([

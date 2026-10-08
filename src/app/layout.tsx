@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Aurele",
-  description: "Fine jewelry",
+  title: "Aurelé",
+  description: "Aurelé fine jewelry. Aurele.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

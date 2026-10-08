@@ -7,7 +7,7 @@ export function ProductGrid({ products }: { products: ProductCard[] }) {
   }
 
   return (
-    <ul className="grid grid-cols-2 gap-x-6 gap-y-14 sm:gap-x-10 lg:grid-cols-4">
+    <ul className="grid grid-cols-2 gap-x-4 gap-y-10 sm:gap-x-8 lg:grid-cols-4">
       {products.map((product) => (
         <li key={product.id}>
           <ProductCardView product={product} />

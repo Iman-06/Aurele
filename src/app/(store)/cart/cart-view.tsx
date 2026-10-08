@@ -119,7 +119,7 @@ export function CartView() {
 
           return (
             <li key={item.variantId} className="flex gap-6 py-8">
-              <div className="relative size-24 shrink-0 overflow-hidden bg-surface">
+              <div className="relative size-24 shrink-0 overflow-hidden bg-[#f4f4f4]">
                 {photo && (
                   <Image src={photo} alt={line?.image?.alt ?? item.name} fill sizes="96px" className="object-cover" />
                 )}

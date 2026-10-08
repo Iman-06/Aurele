@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export function Policy({ title, children }: { title: string; children: ReactNode }) {
   return (
     <article className="mx-auto w-full max-w-2xl px-8 py-16 sm:px-12">
-      <h1 className="text-sm tracking-[0.42em] uppercase">{title}</h1>
+      <h1 className="font-display text-3xl font-normal tracking-[0.04em] uppercase">{title}</h1>
       <div className="mt-10 space-y-8 text-sm leading-relaxed">{children}</div>
     </article>
   );

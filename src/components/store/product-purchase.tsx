@@ -16,6 +16,7 @@ const optionClass = (selected: boolean) =>
 
 export function ProductPurchase({ product }: { product: ProductDetail }) {
   const addItem = useCartStore((s) => s.addItem);
+  const openMiniCart = useCartStore((s) => s.openMiniCart);
   const [finishIndex, setFinishIndex] = useState(0);
   const [colourIndex, setColourIndex] = useState(0);
   const [variantIndex, setVariantIndex] = useState(0);
@@ -50,12 +51,13 @@ export function ProductPurchase({ product }: { product: ProductDetail }) {
       priceAtAdd: variant.price,
     });
     setAdded(true);
+    openMiniCart();
   }
 
   return (
     <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
       <div>
-        <div className="relative aspect-[4/5] overflow-hidden bg-surface">
+        <div className="relative aspect-square overflow-hidden bg-[#f4f4f4]">
           {photo ? (
             <Image key={photo.url} src={photo.url} alt={photo.alt} fill sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" priority />
           ) : (
@@ -72,7 +74,7 @@ export function ProductPurchase({ product }: { product: ProductDetail }) {
                   type="button"
                   aria-label={`Photo ${index + 1} of ${images.length}`}
                   aria-current={selected ? "true" : undefined}
-                  className={`relative size-16 overflow-hidden border bg-surface ${selected ? "border-foreground" : "border-line"}`}
+                  className={`relative size-16 overflow-hidden border bg-[#f4f4f4] ${selected ? "border-foreground" : "border-line"}`}
                   onClick={() => setImageIndex(index)}
                 >
                   <Image src={image.url} alt="" fill sizes="64px" className="object-cover" />
@@ -85,7 +87,7 @@ export function ProductPurchase({ product }: { product: ProductDetail }) {
 
       <div className="flex flex-col gap-8">
         <div className="space-y-3">
-          <h1 className="text-sm tracking-[0.28em] uppercase">{product.name}</h1>
+          <h1 className="text-2xl font-normal">{product.name}</h1>
           <p className="text-sm">{variant ? formatRs(variant.price) : formatRs(product.priceFrom)}</p>
           {product.description && <p className="max-w-md text-sm leading-relaxed text-muted">{product.description}</p>}
         </div>

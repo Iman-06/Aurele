@@ -3,17 +3,17 @@ import Link from "next/link";
 import { Policy, PolicySection } from "@/components/store/policy";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Aurele",
-  description: "The terms that govern use of the Aurele website and purchases from Aurele.",
+  title: "Terms of Service — Aurelé",
+  description: "The terms that govern use of the Aurelé website and purchases from Aurelé. Aurele.",
 };
 
 export default function TermsPage() {
   return (
     <Policy title="Terms of Service">
-      <p className="text-muted">Welcome to Aurele. These Terms of Service govern your access to and use of our website and the purchase of products from us. By accessing our website or placing an order, you agree to these terms.</p>
+      <p className="text-muted">Welcome to Aurelé. These Terms of Service govern your access to and use of our website and the purchase of products from us. By accessing our website or placing an order, you agree to these terms.</p>
       <p className="text-muted">Please read them carefully before making a purchase.</p>
-      <PolicySection heading="About Aurele">
-        <p>Aurele is an online jewellery brand offering jewellery to customers across Pakistan through our website. Throughout these terms, “Aurele,” “we,” “our,” and “us” refer to the business operating this website. “You” and “customer” refer to anyone accessing our website or purchasing our products.</p>
+      <PolicySection heading="About Aurelé">
+        <p>Aurelé is an online jewellery brand offering jewellery to customers across Pakistan through our website. Throughout these terms, “Aurelé,” “we,” “our,” and “us” refer to the business operating this website. “You” and “customer” refer to anyone accessing our website or purchasing our products.</p>
       </PolicySection>
       <PolicySection heading="Products and descriptions">
         <p>We make reasonable efforts to display accurate product descriptions, prices, images, colours, and available variations. Product images are provided to help customers understand the appearance and details of each item. Actual colours and appearance may vary slightly due to lighting, photography, or individual screen settings. Available finishes, colours, and other variations depend on the specific product. Product availability may change as stock is sold. Customers are encouraged to review the product description and available options before placing an order.</p>
@@ -29,7 +29,7 @@ export default function TermsPage() {
       </PolicySection>
       <PolicySection heading="Shipping and delivery">
         <p>
-          Aurele offers delivery across Pakistan to serviceable locations. Delivery charges, estimated delivery timelines, and other applicable shipping conditions will be communicated on our website or during checkout. Delivery timelines are estimates and may be affected by courier operations, weather, public holidays, or other circumstances beyond our reasonable control. Customers are responsible for providing a complete and accurate delivery address and remaining reachable for delivery coordination. For further details, please refer to our{" "}
+          Aurelé offers delivery across Pakistan to serviceable locations. Delivery charges, estimated delivery timelines, and other applicable shipping conditions will be communicated on our website or during checkout. Delivery timelines are estimates and may be affected by courier operations, weather, public holidays, or other circumstances beyond our reasonable control. Customers are responsible for providing a complete and accurate delivery address and remaining reachable for delivery coordination. For further details, please refer to our{" "}
           <Link href="/shipping" className="text-foreground underline">
             Shipping Policy
           </Link>
@@ -65,7 +65,7 @@ export default function TermsPage() {
       </PolicySection>
       <PolicySection heading="Contact us">
         <p>If you have any questions about these terms, your order, or our policies, please contact us through the contact details provided on our website.</p>
-        <p>Thank you for shopping with Aurele!</p>
+        <p>Thank you for shopping with Aurelé!</p>
       </PolicySection>
     </Policy>
   );

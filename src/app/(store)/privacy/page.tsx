@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { Policy, PolicySection } from "@/components/store/policy";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Aurele",
-  description: "How Aurele collects, uses, and protects personal information.",
+  title: "Privacy Policy — Aurelé",
+  description: "How Aurelé collects, uses, and protects personal information. Aurele.",
 };
 
 export default function PrivacyPage() {
   return (
     <Policy title="Privacy Policy">
       <p className="text-muted">
-        At Aurele, we are committed to protecting the privacy and security of our customers’ personal information. This Privacy Policy outlines how we collect, use, disclose, and protect the information you provide when interacting with our website.
+        At Aurelé, we are committed to protecting the privacy and security of our customers’ personal information. This Privacy Policy outlines how we collect, use, disclose, and protect the information you provide when interacting with our website.
       </p>
       <PolicySection heading="Information we collect">
         <p>When you use our Services, we may collect personal information that you provide directly and willingly, such as your name, email address, phone number, shipping address, and payment information. By providing your information, you allow us to use/transfer the information shared in the manner provided in this policy.</p>

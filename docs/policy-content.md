@@ -1,4 +1,4 @@
-# Aurele Policy Content
+# Aurelé Policy Content
 (Source: AURELE_POLICY_BRIEF.docx — use this text for the policy pages, replacing the placeholders)
 
 NOTE: Two email addresses below are marked "(to be decided)" in the original brief.
@@ -7,15 +7,15 @@ so it's a one-line edit once the real support email exists — don't hardcode a 
 
 NOTE ON REFUNDS: This brief says "we don't offer any refund policies," which is about
 change-of-mind returns. It does not override the backend's existing rule that a
-JazzCash payment is refunded if Aurele cancels an order (e.g. sold out before
+JazzCash payment is refunded if Aurelé cancels an order (e.g. sold out before
 shipping) — that refund case should still be stated on this page, worded as an
-exception for when Aurele is unable to fulfill the order, not a general refund offer.
+exception for when Aurelé is unable to fulfill the order, not a general refund offer.
 
 ---
 
 ## Shipping Policy
 
-At Aurele, we ensure that your exquisite jewelry reaches you safely, securely, and
+At Aurelé, we ensure that your exquisite jewelry reaches you safely, securely, and
 on time. All orders are carefully packaged with premium protective materials to
 maintain the pristine condition of your purchase.
 
@@ -35,7 +35,7 @@ slightly longer.
 Once your order is shipped, you will receive a tracking number to monitor your
 shipment.
 
-Aurele is not responsible for delays caused by courier services beyond our control.
+Aurelé is not responsible for delays caused by courier services beyond our control.
 
 ---
 
@@ -65,7 +65,7 @@ The fastest way to ensure you get what you want is to return the item you have,
 and once the return is accepted, make a separate purchase for the new item.
 
 **Refunds**
-We don't offer refunds for change-of-mind returns or exchanges. If Aurele is
+We don't offer refunds for change-of-mind returns or exchanges. If Aurelé is
 unable to fulfill your order — for example, if an item sells out before it ships
 — and you paid by JazzCash, that payment will be refunded in full.
 
@@ -75,7 +75,7 @@ We don't offer exchanges on sale items.
 
 ## Privacy Policy
 
-At Aurele, we are committed to protecting the privacy and security of our
+At Aurelé, we are committed to protecting the privacy and security of our
 customers' personal information. This Privacy Policy outlines how we collect,
 use, disclose, and protect the information you provide when interacting with our
 website.
@@ -113,15 +113,15 @@ secure.
 
 ## Terms of Service
 
-Welcome to Aurele. These Terms of Service govern your access to and use of our
+Welcome to Aurelé. These Terms of Service govern your access to and use of our
 website and the purchase of products from us. By accessing our website or placing
 an order, you agree to these terms.
 
 Please read them carefully before making a purchase.
 
-**About Aurele**
-Aurele is an online jewellery brand offering jewellery to customers across
-Pakistan through our website. Throughout these terms, "Aurele," "we," "our," and
+**About Aurelé**
+Aurelé is an online jewellery brand offering jewellery to customers across
+Pakistan through our website. Throughout these terms, "Aurelé," "we," "our," and
 "us" refer to the business operating this website. "You" and "customer" refer to
 anyone accessing our website or purchasing our products.
 
@@ -163,7 +163,7 @@ after an order is placed, we will inform the customer and discuss the available
 options.
 
 **Shipping and Delivery**
-Aurele offers delivery across Pakistan to serviceable locations. Delivery
+Aurelé offers delivery across Pakistan to serviceable locations. Delivery
 charges, estimated delivery timelines, and other applicable shipping conditions
 will be communicated on our website or during checkout. Delivery timelines are
 estimates and may be affected by courier operations, weather, public holidays, or
@@ -210,4 +210,4 @@ order.
 If you have any questions about these terms, your order, or our policies, please
 contact us through the contact details provided on our website.
 
-Thank you for shopping with Aurele!
+Thank you for shopping with Aurelé!

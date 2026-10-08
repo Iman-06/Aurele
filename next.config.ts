@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Phone on the same Wi-Fi loads the dev server by this LAN address. Without it, Next blocks the dev JS.
+  allowedDevOrigins: ["10.251.114.4"],
   experimental: {
     serverActions: {
       // Admin photo uploads are up to 5 MB (checked in src/server/media/storage.ts) + form overhead.

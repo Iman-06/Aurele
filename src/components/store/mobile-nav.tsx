@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { STORE_CATEGORIES } from "@/lib/store-categories";
+import { HEADER_CATEGORIES } from "@/lib/store-categories";
 
-const itemClass = "block py-3 text-sm tracking-[0.18em] uppercase";
+const itemClass = "block py-3 font-display text-sm tracking-[0.08em] uppercase";
 
 export function MobileNav() {
   const router = useRouter();
@@ -65,6 +65,9 @@ export function MobileNav() {
               <Link href="/new-arrivals" className={itemClass} onClick={(event) => { event.preventDefault(); follow("/new-arrivals"); }}>
                 New Arrivals
               </Link>
+              <Link href="/store" className={itemClass} onClick={(event) => { event.preventDefault(); follow("/store"); }}>
+                Store
+              </Link>
               <button
                 type="button"
                 className={`${itemClass} text-left`}
@@ -75,7 +78,7 @@ export function MobileNav() {
               </button>
               {categoriesOpen && (
                 <div className="flex flex-col pl-4">
-                  {STORE_CATEGORIES.map((category) => (
+                  {HEADER_CATEGORIES.map((category) => (
                     <Link
                       key={category.slug}
                       href={`/${category.slug}`}

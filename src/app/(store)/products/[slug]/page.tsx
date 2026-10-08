@@ -10,11 +10,11 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductDetail(db, slug);
-  if (!product) return { title: "Aurele" };
+  if (!product) return { title: "Aurelé" };
   const category = CATEGORY_LABELS[product.category];
   return {
-    title: `${product.name} — Aurele`,
-    description: product.description?.trim() || `${product.name}, ${category.toLowerCase()} by Aurele.`,
+    title: `${product.name} — Aurelé`,
+    description: `${product.description?.trim() || `${product.name}, ${category.toLowerCase()} by Aurelé.`} Aurele.`,
   };
 }
 

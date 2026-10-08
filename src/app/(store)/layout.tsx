@@ -1,71 +1,113 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { Cardo, Petrona } from "next/font/google";
 import { CartIcon } from "@/components/cart/cart-icon";
+import { MiniCart } from "@/components/cart/mini-cart";
+import { BrandMark, Wordmark } from "@/components/store/brand-mark";
+import { CategoryMenu } from "@/components/store/category-menu";
 import { MobileNav } from "@/components/store/mobile-nav";
-import { SearchForm } from "@/components/store/search-form";
+import { SearchToggle } from "@/components/store/search-toggle";
+import { ABOUT_BLURB, ANNOUNCEMENT, BRAND_NAME, INSTAGRAM_URL } from "@/lib/storefront";
 
-const POLICIES = [
-  { href: "/shipping", label: "Shipping" },
-  { href: "/returns", label: "Returns" },
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
-];
+const cardo = Cardo({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-cardo",
+  display: "swap",
+});
+
+const petrona = Petrona({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-petrona",
+  display: "swap",
+});
 
 const NAV = [
-  { href: "/", label: "Shop" },
+  { href: "/", label: "Home" },
   { href: "/new-arrivals", label: "New Arrivals" },
-  { href: "/earrings", label: "Earrings" },
-  { href: "/rings", label: "Rings" },
-  { href: "/bracelets", label: "Bracelets" },
-  { href: "/necklaces", label: "Necklaces" },
+  { href: "/store", label: "Store" },
+];
+
+const FOOTER_LINKS = [
+  { href: "/search", label: "Search" },
+  { href: "/terms", label: "Terms" },
+  { href: "/returns", label: "Returns" },
+  { href: "/privacy", label: "Privacy" },
+  { href: "/shipping", label: "Shipping" },
 ];
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b border-line bg-background">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-8 py-8 sm:px-12">
-          <div className="flex items-center gap-4">
-            <MobileNav />
-            <Link href="/" className="shrink-0 text-sm tracking-[0.42em] uppercase">
-              Aurele
-            </Link>
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-4 sm:gap-8">
-              <span className="hidden text-[0.65rem] tracking-[0.22em] text-gold uppercase lg:inline">Fine jewelry</span>
-              <Suspense fallback={<div className="hidden h-10 min-w-0 flex-1 sm:max-w-xs lg:block" />}>
-                <SearchForm className="hidden lg:block" />
-              </Suspense>
-              <CartIcon />
-            </div>
-          </div>
-          <nav className="hidden flex-wrap gap-x-8 gap-y-3 text-[0.7rem] tracking-[0.18em] uppercase lg:flex">
+    <div className={`${cardo.variable} ${petrona.variable} ${cardo.className} storefront flex min-h-full flex-1 flex-col bg-white text-[#1c1c1c]`}>
+      <div className="bg-[#1c1c1c] text-white">
+        <p className="px-4 py-2 text-center text-[11px] tracking-[0.14em] uppercase">{ANNOUNCEMENT}</p>
+      </div>
+      <header className="border-b border-line bg-white">
+        <div className="mx-auto flex h-[4.5rem] items-center gap-3 px-4 sm:gap-6 sm:px-8">
+          <MobileNav />
+          <Link href="/" aria-label={BRAND_NAME} className="shrink-0">
+            <Wordmark variant="dark" crop="word" className="h-8" />
+          </Link>
+          <nav className="hidden items-center gap-8 lg:flex" aria-label="Primary">
             {NAV.map((item) => (
-              <Link key={item.href} href={item.href} className="text-muted transition-colors hover:text-foreground">
+              <Link key={item.href} href={item.href} className="font-display text-[13px] tracking-[0.03em] uppercase hover:opacity-60">
                 {item.label}
               </Link>
             ))}
+            <CategoryMenu />
           </nav>
+          <div className="ml-auto flex items-center">
+            <Suspense fallback={<span className="inline-flex size-10" />}>
+              <SearchToggle />
+            </Suspense>
+            <CartIcon />
+          </div>
         </div>
       </header>
+      <MiniCart />
       <main className="flex-1">{children}</main>
       <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-8 py-12 sm:flex-row sm:items-end sm:justify-between sm:px-12">
-          <div className="space-y-2">
-            <p className="text-sm tracking-[0.42em] uppercase">Aurele</p>
-            <p className="text-sm text-muted">Quiet pieces, made to be worn every day.</p>
-          </div>
-          <div className="flex flex-col gap-4 sm:items-end">
-            <nav className="flex flex-wrap gap-x-6 gap-y-2 text-[0.7rem] tracking-[0.16em] uppercase">
-              {POLICIES.map((item) => (
-                <Link key={item.href} href={item.href} className="text-muted transition-colors hover:text-foreground">
+        <div className="mx-auto grid max-w-6xl gap-12 px-8 py-14 sm:px-12 md:grid-cols-2">
+          <div>
+            <div>
+              <BrandMark className="h-14 w-11" />
+              <span className="sr-only">{BRAND_NAME}</span>
+            </div>
+            <nav className="mt-5 flex flex-col gap-2 text-sm" aria-label="Footer">
+              {FOOTER_LINKS.map((item) => (
+                <Link key={item.href} href={item.href} className="w-fit hover:opacity-60">
                   {item.label}
                 </Link>
               ))}
             </nav>
-            <p className="text-[0.7rem] tracking-[0.16em] text-muted uppercase">Lahore</p>
+          </div>
+          <div>
+            <p className="text-sm">About us</p>
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">{ABOUT_BLURB}</p>
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="mt-6 inline-flex size-10 items-center justify-center hover:opacity-60"
+            >
+              <InstagramIcon />
+            </a>
           </div>
         </div>
+        <p className="mx-auto max-w-6xl px-8 pb-10 text-sm sm:px-12">© 2026 {BRAND_NAME}</p>
       </footer>
     </div>
+  );
+}
+
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.25">
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <circle cx="12" cy="12" r="3.5" />
+      <circle cx="17.2" cy="6.8" r="0.6" fill="currentColor" stroke="none" />
+    </svg>
   );
 }

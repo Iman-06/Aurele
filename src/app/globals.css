@@ -1,12 +1,12 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f1ea;
-  --foreground: #141414;
-  --muted: #8a8178;
-  --gold: #b8956c;
-  --line: #e4dcd2;
-  --surface: #fbf8f4;
+  --background: #ffffff;
+  --foreground: #1c1c1c;
+  --muted: #6b6b6b;
+  --gold: #1c1c1c;
+  --line: #e6e6e6;
+  --surface: #ffffff;
 }
 
 @theme inline {
@@ -18,12 +18,38 @@
   --color-surface: var(--surface);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-petrona), "Petrona", serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), ui-sans-serif, sans-serif;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.card-action {
+  transition: opacity 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-action {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .group:hover .card-action,
+  .group:focus-within .card-action {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 @layer components {
@@ -42,7 +68,7 @@ body {
 
   .btn-add {
     background: var(--foreground);
-    color: var(--background);
+    color: #ffffff;
   }
 
   .btn-add:hover {
@@ -56,7 +82,19 @@ body {
   }
 
   .btn-choose:hover {
-    border-color: var(--gold);
-    color: var(--gold);
+    background: var(--foreground);
+    color: #ffffff;
+  }
+
+  .btn-overlay {
+    width: 100%;
+    background: #ffffff;
+    color: #1c1c1c;
+    border: 1px solid #1c1c1c;
+  }
+
+  .btn-overlay:hover {
+    background: #1c1c1c;
+    color: #ffffff;
   }
 }

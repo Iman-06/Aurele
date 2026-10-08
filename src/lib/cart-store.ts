@@ -15,6 +15,10 @@ const clamp = (q: number) => Math.min(Math.max(Math.trunc(q), 1), MAX_PER_ITEM);
 
 export type CartStore = {
   items: CartItem[];
+  /** The header cart icon and Add to Bag open this. It is not written to localStorage. */
+  miniCartOpen: boolean;
+  openMiniCart: () => void;
+  closeMiniCart: () => void;
   /** Adds a new line, or tops up the quantity if the variant is already in the cart. */
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
   removeItem: (variantId: number) => void;
@@ -28,6 +32,9 @@ export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      miniCartOpen: false,
+      openMiniCart: () => set({ miniCartOpen: true }),
+      closeMiniCart: () => set({ miniCartOpen: false }),
 
       addItem: (item, quantity = 1) =>
         set((state) => {

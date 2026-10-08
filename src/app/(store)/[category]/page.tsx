@@ -20,10 +20,10 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: { params: Promise<{ category: string }> }): Promise<Metadata> {
   const { category } = await params;
   const known = categoryBySlug(category);
-  if (!known) return { title: "Aurele" };
+  if (!known) return { title: "Aurelé" };
   return {
-    title: `${known.label} — Aurele`,
-    description: `${known.label} from Aurele. Fine jewelry, made to be worn every day.`,
+    title: `${known.label} — Aurelé`,
+    description: `${known.label} from Aurelé. Fine jewelry, made to be worn every day. Aurele.`,
   };
 }
 
@@ -52,7 +52,7 @@ export default async function CategoryPage({
 
   return (
     <section className="mx-auto w-full max-w-6xl px-8 py-16 sm:px-12">
-      <h1 className="text-sm tracking-[0.42em] uppercase">{known.label}</h1>
+      <h1 className="font-display text-3xl font-normal tracking-[0.04em] uppercase">{known.label}</h1>
       <div className="mt-6 mb-12 flex flex-wrap items-center justify-between gap-4">
         <p className="text-sm text-muted">
           {filtered.total} {filtered.total === 1 ? "piece" : "pieces"}
