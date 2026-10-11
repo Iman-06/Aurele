@@ -107,6 +107,10 @@ export type ProductCard = {
   finishes: Finish[];
   colours: string[]; // real colours only (no "None / Single")
   inStock: boolean;
+  // true → the customer must pick a finish / colour / size first ("Choose");
+  // false → one option to buy, so the card can add it straight to the cart ("Add").
+  // Counts only options that can be bought now (priced, switched on, in stock), ignoring list filters.
+  hasMultipleOptions: boolean;
   image: Image | null;
 };
 
@@ -158,6 +162,7 @@ export async function listProducts(db: PrismaClient, query: ListProductsQuery = 
       finishes: [...new Set(p.variants.map((v) => v.finish))].sort((a, b) => finishOrder(a) - finishOrder(b)),
       colours: [...new Set(p.variants.map((v) => v.colour).filter((c) => c !== NO_COLOUR))].sort((a, b) => colourOrder(a) - colourOrder(b)),
       inStock: available.length > 0,
+      hasMultipleOptions: p.variants.filter((v) => v.quantity > 0).length > 1,
       image: imagesFor(p, first.finish, first.colour)[0] ?? null,
     });
   }

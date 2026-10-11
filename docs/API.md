@@ -33,12 +33,13 @@ Query (all optional): `category` (`earrings` · `rings` · `bracelets` · `neckl
     "id": 3, "slug": "aveline-pearl-drop-ear-001", "name": "Aveline Pearl Drop", "category": "EARRINGS",
     "isNewArrival": false, "priceFrom": 2200, "priceTo": 2500,
     "finishes": ["GOLD", "SILVER"], "colours": ["Green", "Blue"],
-    "inStock": true, "image": { "url": "…", "alt": "Aveline Pearl Drop — Gold — Blue" }
+    "inStock": true, "hasMultipleOptions": true, "image": { "url": "…", "alt": "Aveline Pearl Drop — Gold — Blue" }
   }],
   "total": 9, "page": 1, "pageSize": 24, "totalPages": 1
 }
 ```
 Sold-out designs are included (`inStock: false`, sorted last) — show "Out of Stock". Use `?inStock=true` to hide them.
+`hasMultipleOptions: true` → the customer must pick a finish, colour or ring size first: show **Choose** (link to the product page). `false` → only one option can be bought, so **Add** can put it straight in the cart. It counts only options on sale right now (priced, switched on, in stock) and ignores the list filters.
 
 ### `GET /api/products/{slug}` — product page
 `getProductDetail()` — 404 if the design is hidden or has nothing priced.

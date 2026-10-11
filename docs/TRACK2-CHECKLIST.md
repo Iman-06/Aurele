@@ -13,7 +13,7 @@ Brand is now **Aurelé** (files and identifiers use `Aurele`). Database is the s
       Stored in `Setting`, edited in `/admin/settings`, served by a public store API.
 - [x] **5. Orders: date filter + Excel export** — from/to date on the orders list; "Export to Excel" exports
       the currently filtered orders. *(Search by number/name/phone/email + status tabs already exist.)*
-- [ ] **6. `hasMultipleOptions` on the product list API** — true when more than one sellable variant
+- [x] **6. `hasMultipleOptions` on the product list API** — true when more than one sellable variant
       (finish / colour / size).
 - [ ] **7. One of a Kind** — `isOneOfAKind Boolean @default(false)` on Product (team agreed), admin checkbox,
       returned on list + detail, `?oneOfAKind=true` filter. Migration applied to Neon with `migrate deploy`.

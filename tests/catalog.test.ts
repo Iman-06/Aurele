@@ -180,6 +180,34 @@ describe("product list", () => {
     expect((await listProducts(db, { q: "caroline" })).items[0].colours).toEqual([]);
   });
 
+  it("hasMultipleOptions: true only when there's more than one option a customer can buy now", async () => {
+    const make = (name: string, variants: Parameters<typeof createDesign>[0]["variants"], category?: "RINGS") =>
+      createDesign({ name: `Opt ${name}`, category, variants });
+    await make("Single", [{ finish: "GOLD", qty: 3 }]);
+    await make("Two Finishes", [{ finish: "GOLD", qty: 3 }, { finish: "SILVER", qty: 3 }]);
+    await make("Two Colours", [{ finish: "GOLD", colour: "Blue", qty: 3 }, { finish: "GOLD", colour: "Pink", qty: 3 }]);
+    await make("Ring Sizes", [{ finish: "GOLD", size: "7", qty: 1 }, { finish: "GOLD", size: "8", qty: 1 }], "RINGS");
+    await make("One Size Left", [{ finish: "GOLD", size: "7", qty: 0 }, { finish: "GOLD", size: "8", qty: 1 }], "RINGS");
+    await make("Other Unpriced", [{ finish: "GOLD", qty: 3 }, { finish: "SILVER", qty: 3, price: null }]);
+    await make("Other Hidden", [{ finish: "GOLD", qty: 3 }, { finish: "SILVER", qty: 3, active: false }]);
+    await make("All Sold Out", [{ finish: "GOLD", qty: 0 }, { finish: "SILVER", qty: 0 }]);
+
+    const flags = Object.fromEntries((await listProducts(db, { q: "opt ", pageSize: "48" })).items.map((c) => [c.name, c.hasMultipleOptions]));
+    expect(flags).toEqual({
+      "Opt Single": false,
+      "Opt Two Finishes": true,
+      "Opt Two Colours": true,
+      "Opt Ring Sizes": true, // the case the storefront got wrong before
+      "Opt One Size Left": false, // size 7 sold out → nothing to choose
+      "Opt Other Unpriced": false,
+      "Opt Other Hidden": false,
+      "Opt All Sold Out": false, // card shows "Sold out" anyway
+    });
+    // A finish filter on the list doesn't change it: the card's button still needs the choice.
+    const gold = (await listProducts(db, { q: "opt two finishes", finish: "gold" })).items[0];
+    expect(gold.hasMultipleOptions).toBe(true);
+  });
+
   it("pages results", async () => {
     const p1 = await listProducts(db, { pageSize: "2", page: "1" });
     const p2 = await listProducts(db, { pageSize: "2", page: "2" });
