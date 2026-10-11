@@ -31,6 +31,8 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
         <h1 className="text-2xl font-semibold">Inventory</h1>
         <div className="flex flex-wrap gap-2">
           {/* Plain link: the browser downloads the file */}
+          {/* Plain <a> on purpose: it downloads a file, it isn't a page */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/api/admin/inventory/export" className={btnSecondary}>
             ⬇ Export to Excel
           </a>

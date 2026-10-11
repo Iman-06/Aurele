@@ -32,6 +32,8 @@ export default async function SubscribersPage({ searchParams }: PageProps<"/admi
           </p>
         </div>
         {/* Plain link: the browser downloads the file */}
+        {/* Plain <a> on purpose: it downloads a file, it isn't a page */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a href="/api/admin/subscribers/export" className={btnSecondary}>
           ⬇ Export to Excel
         </a>

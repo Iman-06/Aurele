@@ -12,19 +12,35 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
   await requireAdmin();
   const sp = await searchParams;
   const str = (v: string | string[] | undefined) => (typeof v === "string" ? v : undefined);
-  const data = await listAdminOrders(db, { tab: str(sp.tab) as never, q: str(sp.q), method: str(sp.method) as never, page: str(sp.page) });
+  const data = await listAdminOrders(db, {
+    tab: str(sp.tab) as never,
+    q: str(sp.q),
+    method: str(sp.method) as never,
+    from: str(sp.from),
+    to: str(sp.to),
+    page: str(sp.page),
+  });
   const { query } = data;
 
   const href = (params: Record<string, string | number | undefined>) => {
     const u = new URLSearchParams();
-    const merged = { tab: query.tab, q: query.q, method: query.method, ...params };
+    const merged = { tab: query.tab, q: query.q, method: query.method, from: query.from, to: query.to, ...params };
     for (const [k, v] of Object.entries(merged)) if (v !== undefined && v !== "") u.set(k, String(v));
     return `/admin/orders?${u}`;
   };
+  // Same filters as the list (without the page number) → Excel download
+  const exportHref = href({ page: undefined }).replace("/admin/orders?", "/api/admin/orders/export?");
+  const filtered = Boolean(query.q || query.method || query.from || query.to);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Orders</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold">Orders</h1>
+        {/* Plain <a> on purpose: it downloads a file, it isn't a page */}
+        <a href={exportHref} className={btnSecondary}>
+          Export to Excel{data.total > 0 ? ` (${data.total})` : ""}
+        </a>
+      </div>
 
       {data.refundsNeeded > 0 && (
         <Link href={href({ tab: "action", page: undefined })} className="block rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800">
@@ -58,7 +74,20 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
           <option value="COD">COD only</option>
           <option value="JAZZCASH">JazzCash only</option>
         </select>
+        <label className="w-[calc(50%-0.375rem)] space-y-1 sm:w-auto">
+          <span className="block text-xs text-stone-500">From</span>
+          <input type="date" name="from" defaultValue={query.from ?? ""} className={input} />
+        </label>
+        <label className="w-[calc(50%-0.375rem)] space-y-1 sm:w-auto">
+          <span className="block text-xs text-stone-500">To</span>
+          <input type="date" name="to" defaultValue={query.to ?? ""} className={input} />
+        </label>
         <button className={btnSecondary}>Search</button>
+        {filtered && (
+          <Link href={`/admin/orders?tab=${query.tab}`} className="inline-flex min-h-11 items-center text-sm text-stone-600 underline">
+            Clear filters
+          </Link>
+        )}
       </form>
 
       {data.orders.length === 0 ? (

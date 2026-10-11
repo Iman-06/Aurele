@@ -34,6 +34,8 @@ Website sales and cancellations update stock automatically — you never need to
 - **Cancel** (before shipping) asks for a reason and puts the items back in stock.
 - **JazzCash orders** appear once paid. If a customer paid for something that sold out meanwhile, or you cancel a paid order, it shows **Refund needed** in red: refund in the JazzCash merchant portal, then press **Mark refunded** (add the refund reference).
 - Unpaid JazzCash orders wait under *Awaiting payment* (no stock held) and become *Abandoned* after 24 hours.
+- **Find orders:** search by order number, name, phone, email or tracking number, and pick **From / To** dates (Pakistan time). **Clear filters** shows everything again.
+- **Export to Excel** downloads the orders you're looking at (same tab, search and dates): an *Orders* sheet with one row per order (address, phone, items, totals — handy for courier bookings) and an *Items* sheet with one row per piece (price, cost and profit — for accounts). Cancelled orders are included when the tab shows them; check the *Status* column.
 - Use **Call / WhatsApp / Email** on the order to contact the customer, **notes** for anything the team should know (customers never see them), and **Print packing slip** for the parcel.
 
 ## Homepage

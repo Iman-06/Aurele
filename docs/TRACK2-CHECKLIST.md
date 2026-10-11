@@ -11,13 +11,13 @@ Brand is now **Aurelé** (files and identifiers use `Aurele`). Database is the s
 - [x] **3. Change password in the admin** — Settings → "Change password" (current + new). Logs out other devices.
 - [x] **4. Owner-editable settings** — announcement bar text, Instagram URL, support email, About blurb.
       Stored in `Setting`, edited in `/admin/settings`, served by a public store API.
-- [ ] **5. Orders: date filter + Excel export** — from/to date on the orders list; "Export to Excel" exports
+- [x] **5. Orders: date filter + Excel export** — from/to date on the orders list; "Export to Excel" exports
       the currently filtered orders. *(Search by number/name/phone/email + status tabs already exist.)*
 - [ ] **6. `hasMultipleOptions` on the product list API** — true when more than one sellable variant
       (finish / colour / size).
 - [ ] **7. One of a Kind** — `isOneOfAKind Boolean @default(false)` on Product (team agreed), admin checkbox,
       returned on list + detail, `?oneOfAKind=true` filter. Migration applied to Neon with `migrate deploy`.
-- [ ] **8. Lint: Excel download links** — add `eslint-disable-next-line @next/next/no-html-link-for-pages`
+- [x] **8. Lint: Excel download links** — add `eslint-disable-next-line @next/next/no-html-link-for-pages`
       on the plain `<a>` download links (they must stay plain links so the file downloads).
 - [ ] **9. Admin on a phone — final check** — Iman already did the mobile admin layout (`aa5cfac`);
       I check every admin page at phone width and fix leftovers (wide tables, forms).

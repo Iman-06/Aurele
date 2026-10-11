@@ -27,17 +27,43 @@ const TAB_WHERE: Record<OrderTab, Prisma.OrderWhereInput> = {
   all: {},
 };
 
+// Pakistan has no daylight saving, so a PKT calendar day always starts at 00:00+05:00.
+const pktMidnight = (key: string) => new Date(`${key}T00:00:00+05:00`);
+const dateKey = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  // reject impossible days like 2026-02-31 (JS would roll them over into March)
+  .refine((v) => {
+    const t = pktMidnight(v).getTime();
+    return !Number.isNaN(t) && new Date(t + 5 * 3600_000).toISOString().slice(0, 10) === v;
+  })
+  .optional()
+  .catch(undefined);
+
 export const orderListQuery = z.object({
   tab: z.enum(ORDER_TABS.map((t) => t[0]) as [OrderTab, ...OrderTab[]]).default("action").catch("action"),
   q: z.string().trim().optional(),
   method: z.enum(["COD", "JAZZCASH"]).optional().catch(undefined),
   page: z.coerce.number().int().min(1).default(1).catch(1),
+  // Order date range, inclusive, as Pakistan calendar days ("2026-10-01")
+  from: dateKey,
+  to: dateKey,
 });
 
 const PAGE_SIZE = 30;
 
-export async function listAdminOrders(db: PrismaClient, query: z.input<typeof orderListQuery> = {}) {
+/** Parse the list filters; a reversed date range is swapped instead of showing nothing. */
+export function parseOrderQuery(query: z.input<typeof orderListQuery> = {}) {
   const q = orderListQuery.parse(query);
+  if (q.from && q.to && q.from > q.to) [q.from, q.to] = [q.to, q.from];
+  return q;
+}
+
+/**
+ * Filters shared by the order list and the Excel export. `base` = search + payment method + dates
+ * (used for the tab counts), `where` = base + the selected tab.
+ */
+export function orderFilters(q: ReturnType<typeof parseOrderQuery>) {
   const digits = q.q?.replace(/\D/g, "") ?? "";
   const search: Prisma.OrderWhereInput = q.q
     ? {
@@ -50,8 +76,20 @@ export async function listAdminOrders(db: PrismaClient, query: z.input<typeof or
         ],
       }
     : {};
-  const base: Prisma.OrderWhereInput = { ...search, ...(q.method ? { paymentMethod: q.method } : {}) };
-  const where: Prisma.OrderWhereInput = { AND: [base, TAB_WHERE[q.tab]] };
+  const createdAt: Prisma.DateTimeFilter = {};
+  if (q.from) createdAt.gte = pktMidnight(q.from);
+  if (q.to) createdAt.lt = new Date(pktMidnight(q.to).getTime() + 24 * 3600_000);
+  const base: Prisma.OrderWhereInput = {
+    ...search,
+    ...(q.method ? { paymentMethod: q.method } : {}),
+    ...(q.from || q.to ? { createdAt } : {}),
+  };
+  return { base, where: { AND: [base, TAB_WHERE[q.tab]] } satisfies Prisma.OrderWhereInput };
+}
+
+export async function listAdminOrders(db: PrismaClient, query: z.input<typeof orderListQuery> = {}) {
+  const q = parseOrderQuery(query);
+  const { base, where } = orderFilters(q);
 
   const [orders, total, counts] = await Promise.all([
     db.order.findMany({
