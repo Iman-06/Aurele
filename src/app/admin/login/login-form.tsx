@@ -21,7 +21,7 @@ export function LoginForm({ next }: { next: string }) {
           autoComplete="username"
           required
           defaultValue={state?.email}
-          className="min-h-11 w-full border border-[#e6e6e6] bg-white px-3 py-2 text-sm text-[#1c1c1c] outline-none focus:border-[#1c1c1c] focus:ring-2 focus:ring-[#e6e6e6]"
+          className="min-h-11 w-full border border-[#e6e6e6] bg-white px-3 py-2 text-base text-[#1c1c1c] outline-none sm:text-sm focus:border-[#1c1c1c] focus:ring-2 focus:ring-[#e6e6e6]"
         />
       </div>
 
@@ -35,7 +35,7 @@ export function LoginForm({ next }: { next: string }) {
           type="password"
           autoComplete="current-password"
           required
-          className="min-h-11 w-full border border-[#e6e6e6] bg-white px-3 py-2 text-sm text-[#1c1c1c] outline-none focus:border-[#1c1c1c] focus:ring-2 focus:ring-[#e6e6e6]"
+          className="min-h-11 w-full border border-[#e6e6e6] bg-white px-3 py-2 text-base text-[#1c1c1c] outline-none sm:text-sm focus:border-[#1c1c1c] focus:ring-2 focus:ring-[#e6e6e6]"
         />
       </div>
 

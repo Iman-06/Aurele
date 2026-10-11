@@ -94,19 +94,19 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
                   <td colSpan={2} className="pt-3 text-right text-stone-500">
                     Subtotal
                   </td>
-                  <td className="pt-3 text-right">{formatRs(o.subtotal)}</td>
+                  <td className="pt-3 text-right whitespace-nowrap">{formatRs(o.subtotal)}</td>
                 </tr>
                 <tr>
                   <td colSpan={2} className="text-right text-stone-500">
                     Shipping
                   </td>
-                  <td className="text-right">{formatRs(o.shippingFee)}</td>
+                  <td className="text-right whitespace-nowrap">{formatRs(o.shippingFee)}</td>
                 </tr>
                 <tr>
                   <td colSpan={2} className="text-right font-semibold">
                     Total {o.paymentMethod === "COD" && o.paymentStatus === "UNPAID" ? "(collect in cash)" : ""}
                   </td>
-                  <td className="text-right text-base font-semibold">{formatRs(o.total)}</td>
+                  <td className="text-right text-base font-semibold whitespace-nowrap">{formatRs(o.total)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -245,7 +245,7 @@ function Actions({ o }: { o: AdminOrder }) {
 
       {hasDelivery && (
         <details className="rounded-lg border border-stone-200 p-4">
-          <summary className="cursor-pointer text-sm font-semibold">Edit delivery details / add tracking number</summary>
+          <summary className="cursor-pointer py-3 text-sm font-semibold">Edit delivery details / add tracking number</summary>
           <ActionForm action={updateDeliveryAction.bind(null, o.id)} className="mt-3" submitClassName={btnSecondary}>
             <DeliveryFields
               couriers={COURIERS}
@@ -269,7 +269,7 @@ function Actions({ o }: { o: AdminOrder }) {
 
       {canCancel && (
         <details className="rounded-lg border border-red-100 p-4">
-          <summary className="cursor-pointer text-sm font-semibold text-red-800">Cancel order</summary>
+          <summary className="cursor-pointer py-3 text-sm font-semibold text-red-800">Cancel order</summary>
           <ActionForm
             action={cancelOrderAction.bind(null, o.id)}
             submitLabel="Cancel order"

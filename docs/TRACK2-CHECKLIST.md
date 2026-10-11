@@ -19,7 +19,7 @@ Brand is now **Aurelé** (files and identifiers use `Aurele`). Database is the s
       returned on list + detail, `?oneOfAKind=true` filter. Migration applied to Neon with `migrate deploy`.
 - [x] **8. Lint: Excel download links** — add `eslint-disable-next-line @next/next/no-html-link-for-pages`
       on the plain `<a>` download links (they must stay plain links so the file downloads).
-- [ ] **9. Admin on a phone — final check** — Iman already did the mobile admin layout (`aa5cfac`);
+- [x] **9. Admin on a phone — final check** — Iman already did the mobile admin layout (`aa5cfac`);
       I check every admin page at phone width and fix leftovers (wide tables, forms).
 - [ ] **10. Admin loading + not-found pages** — `loading.tsx` for the admin panel and an admin 404.
 

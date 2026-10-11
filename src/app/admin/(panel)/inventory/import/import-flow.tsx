@@ -90,7 +90,7 @@ function Report({ r }: { r: ImportReport }) {
       )}
       {r.stockChanges.length > 0 && (
         <details open={r.stockChanges.length <= 30}>
-          <summary className="cursor-pointer font-medium">Stock changes ({r.stockChanges.length})</summary>
+          <summary className="cursor-pointer py-3 font-medium">Stock changes ({r.stockChanges.length})</summary>
           <ul className="mt-2 space-y-0.5">
             {r.stockChanges.map((c, i) => (
               <li key={i}>

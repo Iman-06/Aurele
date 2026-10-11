@@ -1,6 +1,6 @@
 // Shared Tailwind class strings for the admin panel, so every form looks the same.
 export const input =
-  "min-h-11 w-full border border-[#e6e6e6] bg-white px-2.5 py-2 text-sm text-[#1c1c1c] outline-none focus:border-[#1c1c1c] focus:ring-2 focus:ring-[#e6e6e6] disabled:bg-[#f4f4f4]";
+  "min-h-11 w-full border border-[#e6e6e6] bg-white px-2.5 py-2 text-base text-[#1c1c1c] sm:text-sm outline-none focus:border-[#1c1c1c] focus:ring-2 focus:ring-[#e6e6e6] disabled:bg-[#f4f4f4]";
 export const label = "block text-xs font-medium uppercase tracking-[0.12em] text-[#6b6b6b]";
 export const btn =
   "inline-flex min-h-11 items-center justify-center bg-[#1c1c1c] px-3 py-2 text-[11px] font-medium tracking-[0.14em] text-white uppercase transition hover:bg-[#2a2a2a] disabled:opacity-50";

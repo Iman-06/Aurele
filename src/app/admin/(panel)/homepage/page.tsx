@@ -120,7 +120,7 @@ export default async function HomepageContentPage() {
                   <span className={`${badge} ${STATE[p.state][1]}`}>{STATE[p.state][0]}</span>
                 </div>
                 <details className="mt-3">
-                  <summary className="cursor-pointer text-sm text-stone-600">Edit</summary>
+                  <summary className="cursor-pointer py-3 text-sm text-stone-600">Edit</summary>
                   <div className="mt-3 space-y-3">
                     <ActionForm action={updatePromotionAction.bind(null, p.id)} resetKey={p.updatedAt.getTime()} className="space-y-3">
                       <PromotionFields p={p} />
@@ -138,7 +138,7 @@ export default async function HomepageContentPage() {
         )}
 
         <details open={promotions.length === 0} className="rounded-lg border border-dashed border-stone-300 p-4">
-          <summary className="cursor-pointer text-sm font-semibold">+ Add a promotion</summary>
+          <summary className="cursor-pointer py-3 text-sm font-semibold">+ Add a promotion</summary>
           <ActionForm action={createPromotionAction} submitLabel="Add promotion" pendingLabel="Adding…" className="mt-3 space-y-3">
             <PromotionFields />
           </ActionForm>
