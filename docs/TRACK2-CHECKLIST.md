@@ -21,7 +21,7 @@ Brand is now **Aurelé** (files and identifiers use `Aurele`). Database is the s
       on the plain `<a>` download links (they must stay plain links so the file downloads).
 - [x] **9. Admin on a phone — final check** — Iman already did the mobile admin layout (`aa5cfac`);
       I check every admin page at phone width and fix leftovers (wide tables, forms).
-- [ ] **10. Admin loading + not-found pages** — `loading.tsx` for the admin panel and an admin 404.
+- [x] **10. Admin loading + not-found pages** — `loading.tsx` for the admin panel and an admin 404.
 
 ## Deferred (mine, not for launch)
 
