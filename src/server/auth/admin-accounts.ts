@@ -12,7 +12,7 @@ const BCRYPT_COST = 12;
 
 // Compared against when the email doesn't exist, so a wrong email takes as long as a
 // wrong password and attackers can't discover which emails are real.
-const DUMMY_HASH = bcrypt.hashSync("lunara-dummy-password-for-timing", BCRYPT_COST);
+const DUMMY_HASH = bcrypt.hashSync("aurele-dummy-password-for-timing", BCRYPT_COST);
 
 export function validateNewPassword(password: string): string | null {
   if (password.length < MIN_PASSWORD_LENGTH) return `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;

@@ -1,4 +1,4 @@
-# Lunara API — for the storefront (Track 1) and checkout (Track 3)
+# Aurelé API — for the storefront (Track 1) and checkout (Track 3)
 
 All endpoints return JSON. Prices are in **PKR** as plain numbers. Errors always look like:
 

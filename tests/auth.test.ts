@@ -89,7 +89,7 @@ describe("session cookie token", () => {
   it("rejects missing, tampered and garbage tokens", async () => {
     const token = await signAdminSession({ adminId: 7, sv: 3 });
     const [h, p, s] = token.split(".");
-    const forgedPayload = Buffer.from(JSON.stringify({ sub: "1", sv: 3, aud: "lunara-admin", exp: 9999999999 })).toString("base64url");
+    const forgedPayload = Buffer.from(JSON.stringify({ sub: "1", sv: 3, aud: "aurele-admin", exp: 9999999999 })).toString("base64url");
     expect(await verifyAdminSession(undefined)).toBeNull();
     expect(await verifyAdminSession("")).toBeNull();
     expect(await verifyAdminSession("not.a.token")).toBeNull();

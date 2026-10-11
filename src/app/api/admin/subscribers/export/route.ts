@@ -9,7 +9,7 @@ export async function GET() {
   return new Response(new Uint8Array(await subscribersWorkbookBuffer(db)), {
     headers: {
       "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "content-disposition": `attachment; filename="Lunara_Subscribers_${date}.xlsx"`,
+      "content-disposition": `attachment; filename="Aurele_Subscribers_${date}.xlsx"`,
       "cache-control": "no-store",
     },
   });

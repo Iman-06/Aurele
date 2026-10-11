@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 // Signed (tamper-proof) admin session token stored in an HttpOnly cookie.
 // No Next.js imports: used by proxy.ts, server code and tests.
 
-export const ADMIN_COOKIE = "lunara_admin";
+export const ADMIN_COOKIE = "aurele_admin";
 export const SESSION_DAYS = 7;
 
 export type AdminSessionPayload = { adminId: number; sv: number }; // sv = sessionVersion
@@ -21,7 +21,7 @@ export async function signAdminSession(payload: AdminSessionPayload, now = new D
   return new SignJWT({ sv: payload.sv })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(payload.adminId))
-    .setAudience("lunara-admin")
+    .setAudience("aurele-admin")
     .setIssuedAt(iat)
     .setExpirationTime(iat + SESSION_DAYS * 24 * 3600)
     .sign(key());
@@ -33,7 +33,7 @@ export async function verifyAdminSession(token: string | undefined, now = new Da
   try {
     const { payload } = await jwtVerify(token, key(), {
       algorithms: ["HS256"],
-      audience: "lunara-admin",
+      audience: "aurele-admin",
       currentDate: now,
     });
     const adminId = Number(payload.sub);

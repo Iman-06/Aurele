@@ -27,7 +27,7 @@ export async function buildInventoryWorkbook(db: PrismaClient, now = new Date())
   });
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = "Lunara admin";
+  wb.creator = "Aurele admin";
   wb.created = now;
 
   for (const { sheet, category } of SHEETS) {

@@ -13,7 +13,7 @@ export async function GET() {
   return new Response(new Uint8Array(buf), {
     headers: {
       "content-type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "content-disposition": `attachment; filename="Lunara_Inventory_${date}.xlsx"`,
+      "content-disposition": `attachment; filename="Aurele_Inventory_${date}.xlsx"`,
       "cache-control": "no-store",
     },
   });

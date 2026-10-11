@@ -1,6 +1,6 @@
-# Lunara
+# Aurelé
 
-Website for **Lunara**, a contemporary jewellery brand in Pakistan — one Next.js 16 app (TypeScript, Tailwind) with a PostgreSQL database via Prisma 7.
+Website for **Aurelé**, a contemporary jewellery brand in Pakistan — one Next.js 16 app (TypeScript, Tailwind) with a PostgreSQL database via Prisma 7.
 
 | Doc | For |
 |---|---|
