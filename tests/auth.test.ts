@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { authenticateAdmin, upsertAdmin } from "@/server/auth/admin-accounts";
+import { authenticateAdmin, changeAdminPassword, upsertAdmin } from "@/server/auth/admin-accounts";
 import { signAdminSession, verifyAdminSession } from "@/server/auth/session-token";
 import { DomainError } from "@/server/errors";
 import { resetDb, testDb as db } from "./helpers/db";
@@ -77,6 +77,50 @@ describe("admin login", () => {
     for (let i = 0; i < 5; i++) await authenticateAdmin(db, { email: EMAIL, password: "wrong" }, t0);
     const later = new Date(t0.getTime() + 20 * 60_000);
     expect(await authenticateAdmin(db, { email: EMAIL, password: "wrong" }, later)).toEqual({ ok: false, reason: "INVALID" });
+  });
+});
+
+describe("change password (signed-in admin)", () => {
+  const NEW = "brand-new-pass-456"; // test-only value
+  const change = (adminId: number, current: string, next = NEW, confirm = next) =>
+    changeAdminPassword(db, { adminId, currentPassword: current, newPassword: next, confirmPassword: confirm });
+
+  it("changes the password and signs out every other device", async () => {
+    const { admin } = await upsertAdmin(db, { email: EMAIL, password: PASSWORD });
+    const { sessionVersion } = await change(admin.id, PASSWORD);
+    expect(sessionVersion).toBe(admin.sessionVersion + 1);
+    expect(await authenticateAdmin(db, { email: EMAIL, password: PASSWORD })).toEqual({ ok: false, reason: "INVALID" });
+    expect((await authenticateAdmin(db, { email: EMAIL, password: NEW })).ok).toBe(true);
+  });
+
+  it("refuses a wrong current password, mismatched or weak new passwords, and reusing the same one", async () => {
+    const { admin } = await upsertAdmin(db, { email: EMAIL, password: PASSWORD });
+    const cases: [string, string, string, RegExp][] = [
+      ["wrong-password-1", NEW, NEW, /current password is incorrect/],
+      [PASSWORD, NEW, "something-else-9", /don't match/],
+      [PASSWORD, "short1", "short1", /at least 10/],
+      [PASSWORD, "onlyletterslong", "onlyletterslong", /letters and numbers/],
+      [PASSWORD, PASSWORD, PASSWORD, /different/],
+      ["", NEW, NEW, /every field/],
+    ];
+    for (const [current, next, confirm, msg] of cases) {
+      const err = await change(admin.id, current, next, confirm).catch((e) => e);
+      expect(err).toBeInstanceOf(DomainError);
+      expect(err.message).toMatch(msg);
+    }
+    const after = await db.adminUser.findUniqueOrThrow({ where: { id: admin.id } });
+    expect(after.sessionVersion).toBe(admin.sessionVersion); // nothing changed
+    expect((await authenticateAdmin(db, { email: EMAIL, password: PASSWORD })).ok).toBe(true);
+  });
+
+  it("wrong current passwords count towards the lockout, so the form can't be used to guess", async () => {
+    const { admin } = await upsertAdmin(db, { email: EMAIL, password: PASSWORD });
+    for (let i = 0; i < 4; i++) await change(admin.id, `guess-number-${i}`).catch(() => {});
+    const fifth = await change(admin.id, "guess-number-5").catch((e) => e);
+    expect(fifth.message).toMatch(/Too many wrong attempts/);
+    // Locked: even the right current password is refused, and login is locked too.
+    expect((await change(admin.id, PASSWORD).catch((e) => e)).message).toMatch(/Too many wrong attempts/);
+    expect(await authenticateAdmin(db, { email: EMAIL, password: PASSWORD })).toMatchObject({ ok: false, reason: "LOCKED" });
   });
 });
 

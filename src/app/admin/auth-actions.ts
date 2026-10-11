@@ -2,8 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { authenticateAdmin, revokeAllSessions } from "@/server/auth/admin-accounts";
+import { authenticateAdmin, changeAdminPassword, revokeAllSessions } from "@/server/auth/admin-accounts";
 import { endAdminSession, requireAdmin, startAdminSession } from "@/server/auth/admin-session";
+import { run, type ActionState } from "./(panel)/action-state";
 
 export type LoginState = { error?: string; email?: string } | undefined;
 
@@ -37,6 +38,21 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
 export async function logout() {
   await endAdminSession();
   redirect("/admin/login");
+}
+
+/** Change your own password. Other devices are signed out; this one gets a fresh cookie. */
+export async function changePasswordAction(_s: ActionState, fd: FormData): Promise<ActionState> {
+  const admin = await requireAdmin();
+  return run(async () => {
+    const { sessionVersion } = await changeAdminPassword(db, {
+      adminId: admin.id,
+      currentPassword: String(fd.get("current_password") ?? ""),
+      newPassword: String(fd.get("new_password") ?? ""),
+      confirmPassword: String(fd.get("confirm_password") ?? ""),
+    });
+    await startAdminSession({ id: admin.id, sessionVersion });
+    return "Password changed. Other devices have been signed out.";
+  });
 }
 
 /** Sign out on every device (e.g. a phone was lost) — all existing login cookies stop working. */

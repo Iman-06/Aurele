@@ -107,6 +107,40 @@ export async function authenticateAdmin(
   return { ok: true, admin: { id: admin.id, email: admin.email, name: admin.name, sessionVersion: admin.sessionVersion } };
 }
 
+/**
+ * A signed-in admin changes their own password. The current password is checked exactly like a
+ * login (wrong guesses count towards the lockout), and every other device is signed out.
+ * Returns the new sessionVersion so the caller can re-issue this device's cookie.
+ */
+export async function changeAdminPassword(
+  db: PrismaClient,
+  input: { adminId: number; currentPassword: string; newPassword: string; confirmPassword: string },
+  now = new Date(),
+): Promise<{ sessionVersion: number }> {
+  if (!input.currentPassword || !input.newPassword) throw new DomainError("INVALID_INPUT", "Please fill in every field");
+  if (input.newPassword !== input.confirmPassword) throw new DomainError("INVALID_INPUT", "The new passwords don't match");
+  const problem = validateNewPassword(input.newPassword);
+  if (problem) throw new DomainError("INVALID_INPUT", problem);
+  if (input.newPassword === input.currentPassword) throw new DomainError("INVALID_INPUT", "The new password must be different from the current one");
+
+  const admin = await db.adminUser.findUniqueOrThrow({ where: { id: input.adminId }, select: { email: true } });
+  const check = await authenticateAdmin(db, { email: admin.email, password: input.currentPassword }, now);
+  if (!check.ok) {
+    if (check.reason === "LOCKED") {
+      throw new DomainError("INVALID_INPUT", `Too many wrong attempts. Please try again in ${check.minutesLeft} minute${check.minutesLeft === 1 ? "" : "s"}.`);
+    }
+    throw new DomainError("INVALID_INPUT", "Your current password is incorrect");
+  }
+
+  const passwordHash = await bcrypt.hash(input.newPassword, BCRYPT_COST);
+  const updated = await db.adminUser.update({
+    where: { id: input.adminId },
+    data: { passwordHash, sessionVersion: { increment: 1 } },
+    select: { sessionVersion: true },
+  });
+  return { sessionVersion: updated.sessionVersion };
+}
+
 /** "Sign out everywhere": every existing login cookie for this admin stops working. */
 export async function revokeAllSessions(db: PrismaClient, adminId: number) {
   await db.adminUser.update({ where: { id: adminId }, data: { sessionVersion: { increment: 1 } } });

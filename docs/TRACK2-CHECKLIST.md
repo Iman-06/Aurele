@@ -8,7 +8,7 @@ Brand is now **Aurelé** (files and identifiers use `Aurele`). Database is the s
       Excel creator string, admin cookie name, README / API docs. *(Admin UI text already done by Iman in `aa5cfac`.)*
 - [x] **2. Shared Neon DB setup** — Prisma migrations use `DIRECT_URL` (unpooled); tests stay on a local `*_test`
       DB and refuse to run against anything else.
-- [ ] **3. Change password in the admin** — Settings → "Change password" (current + new). Logs out other devices.
+- [x] **3. Change password in the admin** — Settings → "Change password" (current + new). Logs out other devices.
 - [ ] **4. Owner-editable settings** — announcement bar text, Instagram URL, support email, About blurb.
       Stored in `Setting`, edited in `/admin/settings`, served by a public store API.
 - [ ] **5. Orders: date filter + Excel export** — from/to date on the orders list; "Export to Excel" exports

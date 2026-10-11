@@ -1,6 +1,6 @@
 # Aurelé admin — owner's guide
 
-Sign in at **`/admin`** (e.g. `https://yourdomain.pk/admin`). Five wrong passwords lock the login for 15 minutes. Forgot the password? A developer runs `npm run admin:create` with your email to set a new one (this signs you out on every device).
+Sign in at **`/admin`** (e.g. `https://yourdomain.pk/admin`). Five wrong passwords lock the login for 15 minutes. To change your password, use **Settings → Change password**. Forgot it completely? A developer runs `npm run admin:create` with your email to set a new one (this signs you out on every device).
 
 ## Dashboard
 The home page shows what needs attention (refunds, new orders, out-of-stock and low-stock items, items without a price, designs without photos) — click any box to go straight there. Below: sales, orders, average order, **gross profit** (sales minus the cost price at the time of sale), a daily sales chart, best sellers and the latest orders for the last 7 / 30 / 90 days. Cancelled and unpaid orders never count as sales.
@@ -47,3 +47,5 @@ Website sales and cancellations update stock automatically — you never need to
 
 ## Settings
 Shipping fee (flat, anywhere in Pakistan) and the low-stock limit ("Only N left" shows at or below this number).
+
+**Change password:** Settings → Change password (current password + new one twice). You stay signed in on this device; every other device is signed out. **Sign out everywhere** is there too, for a lost phone.
