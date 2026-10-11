@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useActionState, type ReactNode } from "react";
+import { Fragment, startTransition, useActionState, useEffect, useRef, type ReactNode } from "react";
 import type { ActionState } from "@/app/admin/(panel)/action-state";
 import { btn } from "./ui";
 
@@ -20,12 +20,23 @@ type Props = {
 /** A form bound to a Server Action that shows the action's success / error message. */
 export function ActionForm({ action, children, submitLabel = "Save", pendingLabel = "Saving…", className, submitClassName = btn, confirm, resetKey }: Props) {
   const [state, formAction, pending] = useActionState(action, null);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // React clears a form after every <form action> submit, which would throw away what the owner
+  // typed when the save fails. So we submit by hand, and only clear the form after a success.
+  useEffect(() => {
+    if (state?.message && !state.error) formRef.current?.reset();
+  }, [state]);
+
   return (
     <form
-      action={formAction}
+      ref={formRef}
       className={className}
       onSubmit={(e) => {
-        if (confirm && !window.confirm(confirm)) e.preventDefault();
+        e.preventDefault();
+        if (pending || (confirm && !window.confirm(confirm))) return;
+        const fd = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
+        startTransition(() => formAction(fd));
       }}
     >
       <Fragment key={resetKey}>{children}</Fragment>

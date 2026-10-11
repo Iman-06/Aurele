@@ -125,7 +125,15 @@ describe("other endpoints", () => {
   });
 
   it("GET /api/store/settings", async () => {
-    expect(await (await settingsRoute()).json()).toEqual({ currency: "PKR", shippingFee: 250, paymentMethods: ["COD", "JAZZCASH"] });
+    expect(await (await settingsRoute()).json()).toEqual({
+      currency: "PKR",
+      shippingFee: 250,
+      paymentMethods: ["COD", "JAZZCASH"],
+      announcement: "New pieces, made to be worn every day",
+      instagramUrl: "https://instagram.com/aurele",
+      supportEmail: null,
+      aboutBlurb: expect.stringContaining("everyday elegance"),
+    });
   });
 
   it("GET /api/cron/abandon-orders needs the secret", async () => {

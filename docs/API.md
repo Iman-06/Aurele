@@ -102,7 +102,19 @@ Body `{ "email": "…" }` → `200 { "ok": true }` (also for repeat sign-ups), `
 - Scheduling is handled by the backend: a promotion appears and disappears on its own dates. The response changes over time, so don't cache it for long (a minute is fine).
 
 ### `GET /api/store/settings`
-`{ "currency": "PKR", "shippingFee": 250, "paymentMethods": ["COD", "JAZZCASH"] }`
+```json
+{
+  "currency": "PKR", "shippingFee": 250, "paymentMethods": ["COD", "JAZZCASH"],
+  "announcement": "New pieces, made to be worn every day",
+  "instagramUrl": "https://instagram.com/aurele",
+  "supportEmail": "hello@aurele.pk",
+  "aboutBlurb": "Aurelé is everyday elegance. …"
+}
+```
+`announcement`, `instagramUrl`, `supportEmail` and `aboutBlurb` are edited by the owner in **Admin → Settings → Store details**.
+Each is `null` when the owner left it empty — **hide that element** (announcement bar, Instagram icon, contact line, About block).
+Server components can call `getStoreDetails(db)` from `src/server/settings.ts` directly instead of fetching —
+this replaces the `ANNOUNCEMENT`, `INSTAGRAM_URL`, `ABOUT_BLURB` constants in `src/lib/storefront.ts` and `SUPPORT_EMAIL` in `src/lib/site.ts`.
 
 ---
 

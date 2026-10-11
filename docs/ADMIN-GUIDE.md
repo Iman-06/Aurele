@@ -48,4 +48,6 @@ Website sales and cancellations update stock automatically — you never need to
 ## Settings
 Shipping fee (flat, anywhere in Pakistan) and the low-stock limit ("Only N left" shows at or below this number).
 
+**Store details:** the announcement bar at the top of the website, your Instagram link, the support email customers see on the policy pages, and the About text in the footer. Leave a box empty to hide it. Changes show on the website straight away.
+
 **Change password:** Settings → Change password (current password + new one twice). You stay signed in on this device; every other device is signed out. **Sign out everywhere** is there too, for a lost phone.
