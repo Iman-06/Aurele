@@ -1,14 +1,14 @@
 import "dotenv/config";
 import { execSync } from "node:child_process";
+import { assertLocalTestDbUrl } from "./helpers/test-db-url";
 
-// Runs once before all tests: bring the separate test database up to the
-// latest migrations. Tests never touch the real `lunara` database.
+// Runs once before all tests: bring the separate local test database up to the
+// latest migrations. Tests never touch the shared Neon database.
 export default function setup() {
-  const url = process.env.TEST_DATABASE_URL;
-  if (!url) throw new Error("TEST_DATABASE_URL is not set (see .env.example)");
-  if (!/lunara_test/.test(url)) throw new Error("TEST_DATABASE_URL must point at a *_test database");
+  const url = assertLocalTestDbUrl(process.env.TEST_DATABASE_URL);
   execSync("npx prisma migrate deploy", {
-    env: { ...process.env, DATABASE_URL: url },
+    // prisma.config.ts migrates through DIRECT_URL when set, so override both.
+    env: { ...process.env, DATABASE_URL: url, DIRECT_URL: url },
     stdio: "pipe",
     timeout: 120_000,
   });

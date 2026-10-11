@@ -6,7 +6,7 @@ Brand is now **Aurelé** (files and identifiers use `Aurele`). Database is the s
 
 - [x] **1. Rename Lunara → Aurele** — download filenames (`Aurele_Inventory_…xlsx`, `Aurele_Subscribers_…xlsx`),
       Excel creator string, admin cookie name, README / API docs. *(Admin UI text already done by Iman in `aa5cfac`.)*
-- [ ] **2. Shared Neon DB setup** — Prisma migrations use `DIRECT_URL` (unpooled); tests stay on a local `*_test`
+- [x] **2. Shared Neon DB setup** — Prisma migrations use `DIRECT_URL` (unpooled); tests stay on a local `*_test`
       DB and refuse to run against anything else.
 - [ ] **3. Change password in the admin** — Settings → "Change password" (current + new). Logs out other devices.
 - [ ] **4. Owner-editable settings** — announcement bar text, Instagram URL, support email, About blurb.

@@ -37,22 +37,30 @@ Website for **Aurelé**, a contemporary jewellery brand in Pakistan — one Next
 
 ## Setup (new machine)
 
-Requirements: **Node.js 22+**, **PostgreSQL 16+**, Git.
+Requirements: **Node.js 22+**, Git, and a **local PostgreSQL 16+** for the automated tests.
+The site itself uses the team's **shared Neon database**.
 
 ```bash
 git clone https://github.com/Iman-06/Lunara.git
 cd Lunara
 npm install
-cp .env.example .env   # fill in DATABASE_URL, TEST_DATABASE_URL, AUTH_SECRET, CRON_SECRET
+cp .env.example .env   # fill in DATABASE_URL (Neon pooled), DIRECT_URL (Neon direct), TEST_DATABASE_URL, AUTH_SECRET, CRON_SECRET
 ```
 
-Create two empty databases (e.g. `lunara` and `lunara_test`) in PostgreSQL, then:
+Create one empty **local** database for the tests (e.g. `lunara_test`). Its name must end in `_test`:
+the tests wipe it, and refuse to run against anything that isn't a local `*_test` database. Then:
 
 ```bash
-npm run setup          # generate client + create tables + default settings + import the inventory workbook
-npm run admin:create   # create your admin login (asks for email + password in the terminal)
+npx prisma generate    # generate the database client
+npm run admin:create   # create your admin login on the shared DB (asks for email + password)
 npm run dev            # http://localhost:3000  — admin at /admin
 ```
+
+**Shared database rules.** Neon already has the tables and the inventory — don't run `npm run setup`
+or `npm run db:seed` against it. Schema changes are agreed by the team first, then:
+1. create the migration against a throwaway **local** database, e.g.
+   `DIRECT_URL="postgresql://postgres:…@localhost:5432/aurele_dev" npm run db:migrate -- --name <change>`
+2. commit it, and apply it to Neon with `npm run db:deploy`. Never run `db:migrate` against Neon — it can reset the database.
 
 Generate secrets with `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`.
 **Windows PowerShell:** if `npm` is blocked ("running scripts is disabled"), use `npm.cmd` instead.
@@ -64,7 +72,7 @@ Generate secrets with `node -e "console.log(require('crypto').randomBytes(48).to
 | `npm run dev` | start the site locally |
 | `npm test` | all automated tests (uses `TEST_DATABASE_URL`, which gets wiped — never point it at real data) |
 | `npm run typecheck` / `npm run lint` | static checks |
-| `npm run db:migrate -- --name <change>` | create a migration after editing the schema (interactive) |
+| `npm run db:migrate -- --name <change>` | create a migration after editing the schema — **local DB only** (see Shared database rules) |
 | `npm run db:deploy` | apply existing migrations (non-interactive — use on servers) |
 | `npm run import:inventory -- --dry-run` | preview an Excel import (owner can also do this in the admin) |
 | `npm run admin:create` | create an admin or reset a password (signs that admin out everywhere) |
