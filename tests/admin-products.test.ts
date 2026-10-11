@@ -79,6 +79,19 @@ describe("designs", () => {
     await expectError(updateProduct(db, 999, { name: "X Y" }), "NOT_FOUND");
   });
 
+  it("One of a Kind: off by default, set by the checkbox on create and edit, and filterable", async () => {
+    const plain = await createProduct(db, { category: "EARRINGS", name: "Celine", isActive: "on" });
+    const unique = await createProduct(db, { category: "RINGS", name: "Solstice", isActive: "on", isOneOfAKind: "on" });
+    expect([plain.isOneOfAKind, unique.isOneOfAKind]).toEqual([false, true]);
+
+    // An unticked checkbox isn't sent at all → switches it off
+    expect((await updateProduct(db, unique.id, { name: "Solstice" })).isOneOfAKind).toBe(false);
+    expect((await updateProduct(db, plain.id, { name: "Celine", isOneOfAKind: "on" })).isOneOfAKind).toBe(true);
+
+    const rows = await listAdminProducts(db, { status: "unique" });
+    expect(rows.map((r) => [r.name, r.isOneOfAKind])).toEqual([["Celine", true]]);
+  });
+
   it("lists with stock totals, unpriced counts and filters", async () => {
     const p = await createProduct(db, { category: "EARRINGS", name: "Aveline", isActive: "on" });
     await addVariant(db, p.id, { finish: "GOLD", colour: "Blue", quantity: "2" });

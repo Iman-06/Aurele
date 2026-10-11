@@ -62,6 +62,9 @@ export default async function NewProductPage() {
             <label className="flex items-center gap-2">
               <input type="checkbox" name="isNewArrival" /> New Arrival
             </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="isOneOfAKind" /> One of a Kind <span className="text-stone-500">(a single unique piece)</span>
+            </label>
           </div>
         </ActionForm>
       </div>

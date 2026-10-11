@@ -14,6 +14,7 @@ const STATUS = [
   ["hidden", "Hidden"],
   ["unpriced", "Missing prices"],
   ["new", "New Arrivals"],
+  ["unique", "One of a Kind"],
 ] as const;
 
 export default async function ProductsPage({ searchParams }: PageProps<"/admin/products">) {
@@ -146,6 +147,7 @@ function ProductStatus({ r }: { r: AdminProductRow }) {
         <span className={`${badge} bg-stone-100 text-stone-600`}>Hidden</span>
       )}
       {r.isNewArrival && <span className={`${badge} bg-violet-50 text-violet-700`}>New</span>}
+      {r.isOneOfAKind && <span className={`${badge} bg-sky-50 text-sky-800`}>One of a Kind</span>}
       {r.unpricedCount > 0 && <span className={`${badge} bg-amber-50 text-amber-800`}>{r.unpricedCount} unpriced</span>}
       {r.imageCount === 0 && <span className={`${badge} bg-stone-100 text-stone-600`}>No photos</span>}
     </>

@@ -53,6 +53,7 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
               <span className={`${badge} bg-stone-100 text-stone-600`}>Hidden</span>
             )}
             {p.isNewArrival && <span className={`${badge} bg-violet-50 text-violet-700`}>New Arrival</span>}
+            {p.isOneOfAKind && <span className={`${badge} bg-sky-50 text-sky-800`}>One of a Kind</span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -88,6 +89,9 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" name="isNewArrival" defaultChecked={p.isNewArrival} /> New Arrival
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="isOneOfAKind" defaultChecked={p.isOneOfAKind} /> One of a Kind <span className="text-stone-500">(a single unique piece)</span>
             </label>
           </div>
         </ActionForm>

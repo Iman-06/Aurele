@@ -47,7 +47,7 @@ async function soldCount(db: PrismaClient | Prisma.TransactionClient, where: Pri
 export const productListFilter = z.object({
   q: z.string().trim().optional(),
   category: z.enum(CATEGORIES).optional().catch(undefined),
-  status: z.enum(["all", "visible", "hidden", "unpriced", "new"]).default("all").catch("all"),
+  status: z.enum(["all", "visible", "hidden", "unpriced", "new", "unique"]).default("all").catch("all"),
 });
 
 export type AdminProductRow = {
@@ -58,6 +58,7 @@ export type AdminProductRow = {
   slug: string;
   isActive: boolean;
   isNewArrival: boolean;
+  isOneOfAKind: boolean;
   variantCount: number;
   totalStock: number;
   unpricedCount: number;
@@ -82,6 +83,7 @@ export async function listAdminProducts(db: PrismaClient, filter: z.input<typeof
       ...(f.status === "visible" ? { isActive: true } : {}),
       ...(f.status === "hidden" ? { isActive: false } : {}),
       ...(f.status === "new" ? { isNewArrival: true } : {}),
+      ...(f.status === "unique" ? { isOneOfAKind: true } : {}),
       ...(f.status === "unpriced" ? { variants: { some: { sellingPrice: null } } } : {}),
     },
     include: {
@@ -98,6 +100,7 @@ export async function listAdminProducts(db: PrismaClient, filter: z.input<typeof
     slug: p.slug,
     isActive: p.isActive,
     isNewArrival: p.isNewArrival,
+    isOneOfAKind: p.isOneOfAKind,
     variantCount: p.variants.length,
     totalStock: p.variants.reduce((s, v) => s + v.quantity, 0),
     unpricedCount: p.variants.filter((v) => v.sellingPrice === null).length,
@@ -115,6 +118,7 @@ const productFields = {
   name: z.string().trim().min(2, "Please enter a product name").max(120).transform(capitaliseName),
   description: z.string().trim().max(5000).optional().transform((v) => v || null),
   isNewArrival: checkbox,
+  isOneOfAKind: checkbox,
   isActive: checkbox,
 };
 
@@ -139,6 +143,7 @@ export async function createProduct(db: PrismaClient, input: Record<string, unkn
       slug: generateSlug(d.name, d.category, articleNo),
       description: d.description,
       isNewArrival: d.isNewArrival,
+      isOneOfAKind: d.isOneOfAKind,
       isActive: d.isActive,
     },
   });

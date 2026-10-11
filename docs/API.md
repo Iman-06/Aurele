@@ -25,13 +25,13 @@ You can also call the functions directly from Server Components / Server Actions
 ### `GET /api/products` — shop, category, search, New Arrivals
 `listProducts()` in `src/server/catalog/catalog.ts`
 
-Query (all optional): `category` (`earrings` · `rings` · `bracelets` · `necklace`), `q` (search name/description), `finish` (`gold`/`silver`), `colour`, `minPrice`, `maxPrice`, `inStock=true`, `newArrivals=true`, `sort` (`newest` default · `price_asc` · `price_desc` · `name`), `page` (1…), `pageSize` (≤ 48, default 24).
+Query (all optional): `category` (`earrings` · `rings` · `bracelets` · `necklace`), `q` (search name/description), `finish` (`gold`/`silver`), `colour`, `minPrice`, `maxPrice`, `inStock=true`, `newArrivals=true`, `oneOfAKind=true` (only One of a Kind pieces), `sort` (`newest` default · `price_asc` · `price_desc` · `name`), `page` (1…), `pageSize` (≤ 48, default 24).
 
 ```json
 {
   "items": [{
     "id": 3, "slug": "aveline-pearl-drop-ear-001", "name": "Aveline Pearl Drop", "category": "EARRINGS",
-    "isNewArrival": false, "priceFrom": 2200, "priceTo": 2500,
+    "isNewArrival": false, "isOneOfAKind": false, "priceFrom": 2200, "priceTo": 2500,
     "finishes": ["GOLD", "SILVER"], "colours": ["Green", "Blue"],
     "inStock": true, "hasMultipleOptions": true, "image": { "url": "…", "alt": "Aveline Pearl Drop — Gold — Blue" }
   }],
@@ -46,7 +46,7 @@ Sold-out designs are included (`inStock: false`, sorted last) — show "Out of S
 
 ```json
 {
-  "name": "Aveline Pearl Drop", "category": "EARRINGS", "priceFrom": 2500, "priceTo": 2500,
+  "name": "Aveline Pearl Drop", "category": "EARRINGS", "isNewArrival": false, "isOneOfAKind": false, "priceFrom": 2500, "priceTo": 2500,
   "inStock": true,
   "showFinishSelector": true,
   "finishes": [{

@@ -15,6 +15,7 @@ export async function createDesign(spec: {
   variants: VariantSpec[];
   images?: ImageSpec[];
   isNewArrival?: boolean;
+  isOneOfAKind?: boolean;
   active?: boolean;
   createdAt?: Date;
 }) {
@@ -28,6 +29,7 @@ export async function createDesign(spec: {
       slug: generateSlug(spec.name, category, articleNo),
       description: spec.description,
       isNewArrival: spec.isNewArrival ?? false,
+      isOneOfAKind: spec.isOneOfAKind ?? false,
       isActive: spec.active ?? true,
       createdAt: spec.createdAt,
       variants: {

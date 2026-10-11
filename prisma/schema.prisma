@@ -98,6 +98,7 @@ model Product {
   description  String?
   isActive     Boolean  @default(true) // hide the whole design without deleting history
   isNewArrival Boolean  @default(false) // owner picks what shows under "New Arrivals"
+  isOneOfAKind Boolean  @default(false) // a single unique piece — badge + "One of a Kind" filter on the storefront
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

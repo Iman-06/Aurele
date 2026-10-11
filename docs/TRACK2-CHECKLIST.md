@@ -15,7 +15,7 @@ Brand is now **Aurelé** (files and identifiers use `Aurele`). Database is the s
       the currently filtered orders. *(Search by number/name/phone/email + status tabs already exist.)*
 - [x] **6. `hasMultipleOptions` on the product list API** — true when more than one sellable variant
       (finish / colour / size).
-- [ ] **7. One of a Kind** — `isOneOfAKind Boolean @default(false)` on Product (team agreed), admin checkbox,
+- [x] **7. One of a Kind** — `isOneOfAKind Boolean @default(false)` on Product (team agreed), admin checkbox,
       returned on list + detail, `?oneOfAKind=true` filter. Migration applied to Neon with `migrate deploy`.
 - [x] **8. Lint: Excel download links** — add `eslint-disable-next-line @next/next/no-html-link-for-pages`
       on the plain `<a>` download links (they must stay plain links so the file downloads).

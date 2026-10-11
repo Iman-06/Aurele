@@ -90,6 +90,7 @@ export const listProductsQuery = z.object({
   maxPrice: optionalNumber,
   inStock: bool.optional(),
   newArrivals: bool.optional(),
+  oneOfAKind: bool.optional(),
   sort: z.enum(["newest", "price_asc", "price_desc", "name"]).default("newest"),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(48).default(24),
@@ -102,6 +103,7 @@ export type ProductCard = {
   name: string;
   category: Category;
   isNewArrival: boolean;
+  isOneOfAKind: boolean;
   priceFrom: number;
   priceTo: number;
   finishes: Finish[];
@@ -125,6 +127,7 @@ export async function listProducts(db: PrismaClient, query: ListProductsQuery = 
       variants: { some: sellableVariant },
       ...(q.category ? { category: q.category } : {}),
       ...(q.newArrivals ? { isNewArrival: true } : {}),
+      ...(q.oneOfAKind ? { isOneOfAKind: true } : {}),
       ...(q.q
         ? { OR: [{ name: { contains: q.q, mode: "insensitive" } }, { description: { contains: q.q, mode: "insensitive" } }] }
         : {}),
@@ -157,6 +160,7 @@ export async function listProducts(db: PrismaClient, query: ListProductsQuery = 
       name: p.name,
       category: p.category,
       isNewArrival: p.isNewArrival,
+      isOneOfAKind: p.isOneOfAKind,
       priceFrom,
       priceTo,
       finishes: [...new Set(p.variants.map((v) => v.finish))].sort((a, b) => finishOrder(a) - finishOrder(b)),
@@ -219,6 +223,7 @@ export type ProductDetail = {
   description: string | null;
   category: Category;
   isNewArrival: boolean;
+  isOneOfAKind: boolean;
   priceFrom: number;
   priceTo: number;
   inStock: boolean; // false → show "Out of Stock", no Add to Cart
@@ -273,6 +278,7 @@ export async function getProductDetail(db: PrismaClient, slug: string): Promise<
     description: p.description,
     category: p.category,
     isNewArrival: p.isNewArrival,
+    isOneOfAKind: p.isOneOfAKind,
     priceFrom: Math.min(...prices),
     priceTo: Math.max(...prices),
     inStock: available.length > 0,

@@ -208,6 +208,20 @@ describe("product list", () => {
     expect(gold.hasMultipleOptions).toBe(true);
   });
 
+  it("One of a Kind: on list cards and the product page, with ?oneOfAKind=true filter", async () => {
+    const u = await createDesign({ name: "Solstice Ring", category: "RINGS", isOneOfAKind: true, variants: [{ finish: "GOLD", size: "7", qty: 1 }] });
+    const all = await listProducts(db, { pageSize: "48" });
+    expect(all.items.find((c) => c.name === "Solstice Ring")!.isOneOfAKind).toBe(true);
+    expect(all.items.filter((c) => c.isOneOfAKind).length).toBe(1);
+
+    const only = await listProducts(db, { oneOfAKind: "true" });
+    expect(only.items.map((c) => c.name)).toEqual(["Solstice Ring"]);
+    expect((await listProducts(db, { oneOfAKind: "false" })).total).toBe(all.total); // false = no filter
+
+    expect((await detail(u.slug)).isOneOfAKind).toBe(true);
+    expect((await detail(all.items.find((c) => !c.isOneOfAKind)!.slug)).isOneOfAKind).toBe(false);
+  });
+
   it("pages results", async () => {
     const p1 = await listProducts(db, { pageSize: "2", page: "1" });
     const p2 = await listProducts(db, { pageSize: "2", page: "2" });
