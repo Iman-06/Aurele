@@ -39,7 +39,7 @@ Query (all optional): `category` (`earrings` · `rings` · `bracelets` · `neckl
 }
 ```
 Sold-out designs are included (`inStock: false`, sorted last) — show "Out of Stock". Use `?inStock=true` to hide them.
-`hasMultipleOptions: true` → the customer must pick a finish, colour or ring size first: show **Choose** (link to the product page). `false` → only one option can be bought, so **Add** can put it straight in the cart. It counts only options on sale right now (priced, switched on, in stock) and ignores the list filters.
+`hasMultipleOptions: true` → the design has more than one finish, colour or ring size: show **Choose** (link to the product page). `false` → a single option, so **Add** can put it straight in the cart. Sold-out options count too (the product page shows them greyed out); options without a price or switched off by the owner don't. List filters don't change it.
 
 ### `GET /api/products/{slug}` — product page
 `getProductDetail()` — 404 if the design is hidden or has nothing priced.
@@ -50,25 +50,31 @@ Sold-out designs are included (`inStock: false`, sorted last) — show "Out of S
   "inStock": true,
   "showFinishSelector": true,
   "finishes": [{
-    "finish": "GOLD", "label": "Gold",
+    "finish": "GOLD", "label": "Gold", "inStock": true,
     "showColourSelector": true,
     "colours": [{
-      "colour": "Blue",
+      "colour": "Blue", "inStock": true,
       "images": [{ "url": "…", "alt": "…" }],
       "showSizeSelector": false,
       "variants": [{ "variantId": 12, "size": "", "price": 2500, "stock": { "status": "LOW_STOCK", "left": 2 } }]
     }]
   }],
+  "defaultVariantId": 12,
   "images": [ ]
 }
 ```
+**Sold-out options are included** (since 2026-10-11): every priced, switched-on finish / colour / size is listed, and
+sold-out ones have `stock: { "status": "OUT_OF_STOCK" }` (and `inStock: false` on a finish or colour whose options are all sold out).
+Show them **greyed out with "Sold out" and don't let the customer select them**. The cart check and checkout refuse them anyway.
+
 How to render:
+0. **Start on `defaultVariantId`** — the first in-stock option — not on index 0 (index 0 may be sold out). It is `null` when everything is sold out.
 1. Show the Finish selector only if `showFinishSelector`; otherwise pre-select `finishes[0]`.
 2. For the chosen finish, show the Colour selector only if `showColourSelector`; otherwise pre-select `colours[0]`. `"None / Single"` means "no colour" — never display that text.
 3. Rings (`showSizeSelector`): pick a size from `variants` (sorted, "Adjustable" last). Otherwise use `variants[0]`.
-4. The chosen `variant` gives `variantId` (put this in the cart), `price` and `stock`: `LOW_STOCK` → **"Only {left} left"**, `IN_STOCK` → nothing.
+4. The chosen `variant` gives `variantId` (put this in the cart), `price` and `stock`: `LOW_STOCK` → **"Only {left} left"**, `IN_STOCK` → nothing, `OUT_OF_STOCK` → "Sold out", Add to Cart disabled.
 5. Swap the gallery to `colours[i].images` when the finish/colour changes.
-6. `inStock: false` → show "Out of Stock", no Add to Cart (`finishes` is empty).
+6. `inStock: false` → show "Out of Stock", no Add to Cart. The options are still listed, all greyed.
 
 ### `POST /api/cart/validate` — refresh a saved cart
 `validateCart()`. Keep the cart in `localStorage` as `[{ variantId, quantity, price }]` (price = what the customer saw). Call this when the cart/checkout page opens.

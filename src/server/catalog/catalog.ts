@@ -10,7 +10,7 @@ import { getNumberSetting } from "../settings";
 //  • A design is LISTED when it has at least one sellable variant. If all of those are
 //    at 0 stock it is still listed, marked Out of Stock.
 //  • Product page: Finish first → Colour only if that finish has >1 colour → Size for rings.
-//    Combinations with 0 stock are not offered.
+//    Combinations with 0 stock ARE shown (greyed, "Sold out") but can't be bought.
 //  • 1–3 left → "Only N left". The SKU is never shown to customers.
 // The catalogue is small (hundreds of designs), so filtering/sorting happens in memory
 // on one query — simple and always consistent.
@@ -109,9 +109,10 @@ export type ProductCard = {
   finishes: Finish[];
   colours: string[]; // real colours only (no "None / Single")
   inStock: boolean;
-  // true → the customer must pick a finish / colour / size first ("Choose");
-  // false → one option to buy, so the card can add it straight to the cart ("Add").
-  // Counts only options that can be bought now (priced, switched on, in stock), ignoring list filters.
+  // true → the product has more than one finish / colour / size, so the card shows "Choose"
+  // (sold-out options count too — the product page shows them greyed out);
+  // false → a single option, so the card can add it straight to the cart ("Add").
+  // Counts priced, switched-on options; ignores the list filters.
   hasMultipleOptions: boolean;
   image: Image | null;
 };
@@ -166,7 +167,7 @@ export async function listProducts(db: PrismaClient, query: ListProductsQuery = 
       finishes: [...new Set(p.variants.map((v) => v.finish))].sort((a, b) => finishOrder(a) - finishOrder(b)),
       colours: [...new Set(p.variants.map((v) => v.colour).filter((c) => c !== NO_COLOUR))].sort((a, b) => colourOrder(a) - colourOrder(b)),
       inStock: available.length > 0,
-      hasMultipleOptions: p.variants.filter((v) => v.quantity > 0).length > 1,
+      hasMultipleOptions: p.variants.length > 1,
       image: imagesFor(p, first.finish, first.colour)[0] ?? null,
     });
   }
@@ -199,11 +200,12 @@ export type VariantOption = {
   variantId: number;
   size: string; // "" for non-rings
   price: number;
-  stock: StockStatus; // never OUT_OF_STOCK here — sold-out combinations aren't offered
+  stock: StockStatus; // OUT_OF_STOCK → show greyed out with "Sold out", not selectable
 };
 
 export type ColourOption = {
   colour: string; // "None / Single" when the design has no colour choice
+  inStock: boolean; // false → every size of this colour is sold out (show greyed)
   images: Image[];
   showSizeSelector: boolean; // rings
   variants: VariantOption[]; // one per size (exactly one for non-rings)
@@ -212,7 +214,8 @@ export type ColourOption = {
 export type FinishOption = {
   finish: Finish;
   label: string;
-  showColourSelector: boolean; // only if this finish has more than one colour
+  inStock: boolean; // false → every colour/size of this finish is sold out (show greyed)
+  showColourSelector: boolean; // only if this finish has more than one colour (sold-out ones included)
   colours: ColourOption[];
 };
 
@@ -227,9 +230,10 @@ export type ProductDetail = {
   priceFrom: number;
   priceTo: number;
   inStock: boolean; // false → show "Out of Stock", no Add to Cart
-  showFinishSelector: boolean; // only if more than one finish is available
-  finishes: FinishOption[]; // empty when out of stock
-  images: Image[]; // default gallery (first available combination)
+  showFinishSelector: boolean; // only if the design has more than one finish (sold-out ones included)
+  finishes: FinishOption[]; // every priced option, sold-out ones marked OUT_OF_STOCK
+  defaultVariantId: number | null; // select this one first: the first in-stock option (null = all sold out)
+  images: Image[]; // default gallery (for defaultVariantId, or the first option when all sold out)
 };
 
 export async function getProductDetail(db: PrismaClient, slug: string): Promise<ProductDetail | null> {
@@ -240,7 +244,7 @@ export async function getProductDetail(db: PrismaClient, slug: string): Promise<
   const available = p.variants.filter((v) => v.quantity > 0);
 
   const byFinish = new Map<Finish, Map<string, VariantRow[]>>();
-  for (const v of available) {
+  for (const v of p.variants) {
     const colours = byFinish.get(v.finish) ?? new Map<string, VariantRow[]>();
     colours.set(v.colour, [...(colours.get(v.colour) ?? []), v]);
     byFinish.set(v.finish, colours);
@@ -251,11 +255,13 @@ export async function getProductDetail(db: PrismaClient, slug: string): Promise<
     .map(([finish, colours]) => ({
       finish,
       label: FINISH_LABELS[finish],
+      inStock: [...colours.values()].some((vs) => vs.some((v) => v.quantity > 0)),
       showColourSelector: colours.size > 1,
       colours: [...colours.entries()]
         .sort(([a], [b]) => colourOrder(a) - colourOrder(b))
         .map(([colour, vs]) => ({
           colour,
+          inStock: vs.some((v) => v.quantity > 0),
           images: imagesFor(p, finish, colour),
           showSizeSelector: p.category === "RINGS",
           variants: vs
@@ -270,7 +276,10 @@ export async function getProductDetail(db: PrismaClient, slug: string): Promise<
     }));
 
   const prices = (available.length ? available : p.variants).map((v) => money(v.sellingPrice!));
-  const first = available[0] ?? p.variants[0];
+  // First in-stock option in the order the selectors show them (finish → colour → size)
+  const ordered = finishes.flatMap((f) => f.colours.flatMap((c) => c.variants.map((v) => ({ f, c, v }))));
+  const firstAvailable = ordered.find((o) => o.v.stock.status !== "OUT_OF_STOCK");
+  const first = firstAvailable ?? ordered[0];
   return {
     id: p.id,
     slug: p.slug,
@@ -284,7 +293,8 @@ export async function getProductDetail(db: PrismaClient, slug: string): Promise<
     inStock: available.length > 0,
     showFinishSelector: finishes.length > 1,
     finishes,
-    images: imagesFor(p, first.finish, first.colour),
+    defaultVariantId: firstAvailable?.v.variantId ?? null,
+    images: imagesFor(p, first.f.finish, first.c.colour),
   };
 }
 

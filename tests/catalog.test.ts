@@ -26,7 +26,7 @@ describe("product page options (Finish → Colour → Size)", () => {
         { finish: "GOLD", colour: "Green", qty: 1 },
         { finish: "GOLD", colour: "Pink", qty: 5 },
         { finish: "SILVER", colour: "Blue", qty: 3 },
-        { finish: "SILVER", colour: "Pink", qty: 0 }, // sold out → not offered
+        { finish: "SILVER", colour: "Pink", qty: 0 }, // sold out → shown greyed, not buyable
       ],
     });
     const d = await detail(p.slug);
@@ -39,14 +39,38 @@ describe("product page options (Finish → Colour → Size)", () => {
     expect(gold.colours.map((c) => c.colour)).toEqual(["Pink", "Green", "Blue"]); // workbook colour order
 
     const silver = d.finishes[1];
-    expect(silver.showColourSelector).toBe(false); // only Blue left → no colour selector
-    expect(silver.colours.map((c) => c.colour)).toEqual(["Blue"]);
+    expect(silver.showColourSelector).toBe(true); // Pink is sold out but still shown
+    expect(silver.colours.map((c) => [c.colour, c.inStock])).toEqual([["Pink", false], ["Blue", true]]);
+    expect([gold.inStock, silver.inStock]).toEqual([true, true]);
 
     const stock = (f: number, c: string) => d.finishes[f].colours.find((x) => x.colour === c)!.variants[0].stock;
     expect(stock(0, "Blue")).toEqual({ status: "LOW_STOCK", left: 2 });
     expect(stock(0, "Green")).toEqual({ status: "LOW_STOCK", left: 1 });
     expect(stock(0, "Pink")).toEqual({ status: "IN_STOCK" });
     expect(stock(1, "Blue")).toEqual({ status: "LOW_STOCK", left: 3 });
+    expect(stock(1, "Pink")).toEqual({ status: "OUT_OF_STOCK" });
+    expect(d.defaultVariantId).toBe(p.variants[2].id); // Gold Pink: first in-stock option in selector order
+  });
+
+  it("opens on the first in-stock option when the first ones are sold out, and greys out a sold-out finish", async () => {
+    const p = await createDesign({
+      name: "Halo",
+      variants: [
+        { finish: "GOLD", colour: "Pink", qty: 0 },
+        { finish: "GOLD", colour: "Blue", qty: 0 },
+        { finish: "SILVER", colour: "Blue", qty: 4 },
+      ],
+      images: [
+        { finish: "GOLD", colour: "Pink", url: "/img/gold-pink.jpg" },
+        { finish: "SILVER", colour: "Blue", url: "/img/silver-blue.jpg" },
+      ],
+    });
+    const d = await detail(p.slug);
+    expect(d.inStock).toBe(true);
+    expect(d.showFinishSelector).toBe(true);
+    expect(d.finishes.map((f) => [f.finish, f.inStock])).toEqual([["GOLD", false], ["SILVER", true]]);
+    expect(d.defaultVariantId).toBe(p.variants[2].id);
+    expect(d.images.map((i) => i.url)).toEqual(["/img/silver-blue.jpg"]); // gallery follows the default option
   });
 
   it("one finish, no colour: no selectors at all", async () => {
@@ -60,7 +84,7 @@ describe("product page options (Finish → Colour → Size)", () => {
     ]);
   });
 
-  it("rings: sizes offered per colour, sorted, Adjustable last, sold-out sizes hidden", async () => {
+  it("rings: sizes per colour, sorted, Adjustable last, sold-out sizes shown as OUT_OF_STOCK", async () => {
     const p = await createDesign({
       name: "Flower Bloom",
       category: "RINGS",
@@ -73,7 +97,12 @@ describe("product page options (Finish → Colour → Size)", () => {
     });
     const c = (await detail(p.slug)).finishes[0].colours[0];
     expect(c.showSizeSelector).toBe(true);
-    expect(c.variants.map((v) => v.size)).toEqual(["7", "8", "Adjustable"]);
+    expect(c.variants.map((v) => [v.size, v.stock.status])).toEqual([
+      ["7", "LOW_STOCK"],
+      ["8", "LOW_STOCK"],
+      ["9", "OUT_OF_STOCK"],
+      ["Adjustable", "LOW_STOCK"],
+    ]);
   });
 
   it("unpriced or owner-hidden stock rows are invisible", async () => {
@@ -96,14 +125,15 @@ describe("product page options (Finish → Colour → Size)", () => {
     expect(await getProductDetail(db, "does-not-exist")).toBeNull();
   });
 
-  it("everything sold out: the design still shows, as Out of Stock, with no options", async () => {
+  it("everything sold out: the design shows as Out of Stock, its options greyed, nothing selected", async () => {
     const p = await createDesign({
       name: "Lumina Arc",
       variants: [{ finish: "GOLD", qty: 0, price: 12000 }],
       images: [{ url: "/img/lumina.jpg" }],
     });
     const d = await detail(p.slug);
-    expect(d).toMatchObject({ inStock: false, finishes: [], showFinishSelector: false, priceFrom: 12000 });
+    expect(d).toMatchObject({ inStock: false, showFinishSelector: false, priceFrom: 12000, defaultVariantId: null });
+    expect(d.finishes).toMatchObject([{ finish: "GOLD", inStock: false, colours: [{ inStock: false, variants: [{ stock: { status: "OUT_OF_STOCK" } }] }] }]);
     expect(d.images.map((i) => i.url)).toEqual(["/img/lumina.jpg"]);
   });
 
@@ -180,7 +210,7 @@ describe("product list", () => {
     expect((await listProducts(db, { q: "caroline" })).items[0].colours).toEqual([]);
   });
 
-  it("hasMultipleOptions: true only when there's more than one option a customer can buy now", async () => {
+  it("hasMultipleOptions: true when there's more than one priced, switched-on option (sold-out ones count)", async () => {
     const make = (name: string, variants: Parameters<typeof createDesign>[0]["variants"], category?: "RINGS") =>
       createDesign({ name: `Opt ${name}`, category, variants });
     await make("Single", [{ finish: "GOLD", qty: 3 }]);
@@ -198,10 +228,10 @@ describe("product list", () => {
       "Opt Two Finishes": true,
       "Opt Two Colours": true,
       "Opt Ring Sizes": true, // the case the storefront got wrong before
-      "Opt One Size Left": false, // size 7 sold out → nothing to choose
+      "Opt One Size Left": true, // size 7 sold out, but shown greyed → "Choose"
       "Opt Other Unpriced": false,
       "Opt Other Hidden": false,
-      "Opt All Sold Out": false, // card shows "Sold out" anyway
+      "Opt All Sold Out": true, // card shows "Sold out" anyway
     });
     // A finish filter on the list doesn't change it: the card's button still needs the choice.
     const gold = (await listProducts(db, { q: "opt two finishes", finish: "gold" })).items[0];
