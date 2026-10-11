@@ -39,7 +39,7 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/admin/products" className="text-sm text-stone-500 hover:text-stone-800">
+          <Link href="/admin/products" className="inline-flex min-h-11 items-center text-sm text-stone-500 hover:text-stone-800">
             ← Products
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">{p.name}</h1>
@@ -122,7 +122,7 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
                   <span className="font-medium">{FINISH_LABELS[v.finish]}</span>
                   {v.colour !== NO_COLOUR && <span>· {v.colour}</span>}
                   {v.size && <span>· size {v.size}</span>}
-                  <span className="text-xs text-stone-400">{v.sku}</span>
+                  <span className="text-[13px] text-stone-500">{v.sku}</span>
                   {v.sellingPrice === null && <span className={`${badge} bg-amber-50 text-amber-800`}>No price — hidden on website</span>}
                   {v.quantity === 0 && <span className={`${badge} bg-stone-100 text-stone-600`}>Out of stock</span>}
                 </div>
@@ -189,17 +189,17 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
                 </figcaption>
                 <div className="flex gap-1">
                   <form action={moveImageAction.bind(null, p.id, img.id, "up")}>
-                    <button disabled={i === 0} className={`${btnSecondary} !px-2 !py-0.5 text-xs`} aria-label="Move earlier">
+                    <button disabled={i === 0} className={`${btnSecondary} min-w-11 !px-2`} aria-label="Move earlier">
                       ←
                     </button>
                   </form>
                   <form action={moveImageAction.bind(null, p.id, img.id, "down")}>
-                    <button disabled={i === p.images.length - 1} className={`${btnSecondary} !px-2 !py-0.5 text-xs`} aria-label="Move later">
+                    <button disabled={i === p.images.length - 1} className={`${btnSecondary} min-w-11 !px-2`} aria-label="Move later">
                       →
                     </button>
                   </form>
                   <form action={deleteImageAction.bind(null, p.id, img.id)}>
-                    <ConfirmButton message="Delete this photo?" className={`${btnDanger} !px-2 !py-0.5 text-xs`}>
+                    <ConfirmButton message="Delete this photo?" className={`${btnDanger} min-w-11 px-3`}>
                       Delete
                     </ConfirmButton>
                   </form>
@@ -289,9 +289,9 @@ function Field(props: {
 
 function Select({ label: text, name, options, required }: { label: string; name: string; options: [string, string][]; required?: boolean }) {
   return (
-    <label className="block space-y-1">
+    <label className="block w-full space-y-1 sm:w-auto">
       <span className={label}>{text}</span>
-      <select name={name} required={required} className={`${input} w-auto`} defaultValue={required ? "" : options[0]?.[0]}>
+      <select name={name} required={required} className={`${input} w-full sm:w-auto`} defaultValue={required ? "" : options[0]?.[0]}>
         {required && (
           <option value="" disabled>
             Choose…

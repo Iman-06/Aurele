@@ -1,27 +1,13 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Cardo, Petrona } from "next/font/google";
 import { CartIcon } from "@/components/cart/cart-icon";
 import { MiniCart } from "@/components/cart/mini-cart";
 import { BrandMark, Wordmark } from "@/components/store/brand-mark";
 import { CategoryMenu } from "@/components/store/category-menu";
 import { MobileNav } from "@/components/store/mobile-nav";
 import { SearchToggle } from "@/components/store/search-toggle";
+import { cardo, petrona } from "@/lib/fonts";
 import { ABOUT_BLURB, ANNOUNCEMENT, BRAND_NAME, INSTAGRAM_URL } from "@/lib/storefront";
-
-const cardo = Cardo({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-cardo",
-  display: "swap",
-});
-
-const petrona = Petrona({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-petrona",
-  display: "swap",
-});
 
 const NAV = [
   { href: "/", label: "Home" },
@@ -30,7 +16,6 @@ const NAV = [
 ];
 
 const FOOTER_LINKS = [
-  { href: "/search", label: "Search" },
   { href: "/terms", label: "Terms" },
   { href: "/returns", label: "Returns" },
   { href: "/privacy", label: "Privacy" },

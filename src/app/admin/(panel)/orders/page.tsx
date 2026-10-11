@@ -41,7 +41,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
             key={tab}
             href={href({ tab, page: undefined })}
             aria-current={query.tab === tab ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 ${query.tab === tab ? "border-stone-900 font-medium text-stone-900" : "border-transparent text-stone-500 hover:text-stone-800"}`}
+            className={`inline-flex min-h-11 items-center border-b-2 px-3 ${query.tab === tab ? "border-stone-900 font-medium text-stone-900" : "border-transparent text-stone-500 hover:text-stone-800"}`}
           >
             {label} <span className="text-xs text-stone-400">{data.counts[tab]}</span>
           </Link>
@@ -53,7 +53,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
         <div className="w-full sm:w-72">
           <input name="q" defaultValue={query.q} placeholder="Order #, name, phone, email or tracking no." className={input} aria-label="Search orders" />
         </div>
-        <select name="method" defaultValue={query.method ?? ""} className={`${input} w-auto`} aria-label="Payment method">
+        <select name="method" defaultValue={query.method ?? ""} className={`${input} w-full sm:w-auto`} aria-label="Payment method">
           <option value="">COD &amp; JazzCash</option>
           <option value="COD">COD only</option>
           <option value="JAZZCASH">JazzCash only</option>
@@ -66,7 +66,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
       ) : (
         <div className="divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white">
           {data.orders.map((o) => (
-            <Link key={o.id} href={`/admin/orders/${o.id}`} className="flex flex-wrap items-center justify-between gap-3 p-4 hover:bg-stone-50">
+            <Link key={o.id} href={`/admin/orders/${o.id}`} className="flex min-h-11 flex-wrap items-center justify-between gap-3 p-4 hover:bg-stone-50">
               <div className="min-w-0">
                 <p className="font-medium">
                   #{o.orderNumber} · {o.customerName} <span className="font-normal text-stone-500">· {o.city}</span>

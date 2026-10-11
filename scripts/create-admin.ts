@@ -34,7 +34,7 @@ async function main() {
     process.exitCode = 1;
     return;
   }
-  console.log("Lunara — create or reset an admin login\n");
+  console.log("Aurelé — create or reset an admin login\n");
   const email = (await ask("Email: ")).trim();
   const name = (await ask("Name (optional): ")).trim();
   const password = await ask(`Password (min ${MIN_PASSWORD_LENGTH} characters, letters + numbers): `, true);

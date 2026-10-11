@@ -11,7 +11,7 @@ export function LoginForm({ next }: { next: string }) {
       <input type="hidden" name="next" value={next} />
 
       <div className="space-y-1.5">
-        <label htmlFor="email" className="block text-sm font-medium text-stone-700">
+        <label htmlFor="email" className="block text-sm font-medium text-[#1c1c1c]">
           Email
         </label>
         <input
@@ -21,12 +21,12 @@ export function LoginForm({ next }: { next: string }) {
           autoComplete="username"
           required
           defaultValue={state?.email}
-          className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:border-stone-500 focus:ring-2 focus:ring-stone-200"
+          className="min-h-11 w-full border border-[#e6e6e6] bg-white px-3 py-2 text-sm text-[#1c1c1c] outline-none focus:border-[#1c1c1c] focus:ring-2 focus:ring-[#e6e6e6]"
         />
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="password" className="block text-sm font-medium text-stone-700">
+        <label htmlFor="password" className="block text-sm font-medium text-[#1c1c1c]">
           Password
         </label>
         <input
@@ -35,7 +35,7 @@ export function LoginForm({ next }: { next: string }) {
           type="password"
           autoComplete="current-password"
           required
-          className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-stone-900 outline-none focus:border-stone-500 focus:ring-2 focus:ring-stone-200"
+          className="min-h-11 w-full border border-[#e6e6e6] bg-white px-3 py-2 text-sm text-[#1c1c1c] outline-none focus:border-[#1c1c1c] focus:ring-2 focus:ring-[#e6e6e6]"
         />
       </div>
 
@@ -48,7 +48,7 @@ export function LoginForm({ next }: { next: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-stone-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-stone-700 disabled:opacity-60"
+        className="min-h-11 w-full bg-[#1c1c1c] px-4 py-3 text-[11px] font-medium tracking-[0.18em] text-white uppercase transition hover:bg-[#2a2a2a] disabled:opacity-60"
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>

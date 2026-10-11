@@ -21,7 +21,7 @@ export default async function StockHistoryPage({ params }: PageProps<"/admin/inv
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/admin/inventory" className="text-sm text-stone-500 hover:text-stone-800">
+        <Link href="/admin/inventory" className="inline-flex min-h-11 items-center text-sm text-stone-500 hover:text-stone-800">
           ← Inventory
         </Link>
         <h1 className="mt-1 text-2xl font-semibold">{v.product.name}</h1>
@@ -41,7 +41,7 @@ export default async function StockHistoryPage({ params }: PageProps<"/admin/inv
           <p className="text-sm text-stone-500">No changes recorded yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[36rem] text-sm">
               <thead className="text-left text-xs uppercase tracking-wide text-stone-500">
                 <tr>
                   <th className="py-2 pr-4">When (PKT)</th>

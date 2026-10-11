@@ -37,13 +37,13 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
           <h1 className="text-2xl font-semibold">Welcome{admin.name ? `, ${admin.name}` : ""}</h1>
           <p className="text-sm text-stone-500">Sales are COD orders placed and JazzCash orders paid — cancelled and unpaid orders don&apos;t count.</p>
         </div>
-        <nav className="flex rounded-lg border border-stone-200 bg-white p-0.5 text-sm" aria-label="Period">
+        <nav className="flex flex-wrap border border-[#e6e6e6] bg-white text-sm" aria-label="Period">
           {PERIODS.map((p) => (
             <Link
               key={p}
               href={`/admin?days=${p}`}
               aria-current={d.days === p ? "page" : undefined}
-              className={`rounded-md px-3 py-1 ${d.days === p ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"}`}
+              className={`inline-flex min-h-11 items-center px-3 ${d.days === p ? "bg-stone-900 text-white" : "text-stone-600 hover:bg-stone-100"}`}
             >
               {p} days
             </Link>
@@ -72,7 +72,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
         />
       </section>
 
-      <section className={card}>
+      <section className={`${card} min-w-0`}>
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-semibold">Daily sales — last {d.days} days</h2>
           <p className="text-sm text-stone-500">
@@ -82,8 +82,8 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
         <SalesChart daily={d.daily} />
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className={card}>
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+        <section className={`${card} min-w-0`}>
           <h2 className="mb-4 font-semibold">Best sellers</h2>
           {d.topDesigns.length ? (
             <RankBars
@@ -98,7 +98,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<"/a
             <p className="text-sm text-stone-500">No sales in this period yet.</p>
           )}
         </section>
-        <section className={card}>
+        <section className={`${card} min-w-0`}>
           <h2 className="mb-4 font-semibold">Sales by category</h2>
           {d.byCategory.length ? (
             <RankBars rows={d.byCategory.map((c) => ({ label: CATEGORY_LABELS[c.category], value: c.sales, sub: `${formatRs(c.sales)} · ${c.pieces} pc` }))} />

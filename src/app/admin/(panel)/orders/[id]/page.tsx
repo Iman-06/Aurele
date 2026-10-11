@@ -7,6 +7,7 @@ import { PrintButton } from "@/components/admin/print-button";
 import { btn, btnDanger, btnSecondary, card, input, label } from "@/components/admin/ui";
 import { db } from "@/lib/db";
 import { formatRs, whatsappLink } from "@/lib/format";
+import { BRAND_NAME } from "@/lib/storefront";
 import { getAdminOrder, type AdminOrder } from "@/server/admin/orders";
 import { requireAdmin } from "@/server/auth/admin-session";
 import { variantLabel } from "@/server/inventory/stock";
@@ -33,14 +34,18 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
   const o = Number.isInteger(id) ? await getAdminOrder(db, id) : null;
   if (!o) notFound();
 
-  const wa = whatsappLink(o.phone, `Assalam o Alaikum ${o.customerName}, this is Lunara about your order #${o.orderNumber}.`);
+  const wa = whatsappLink(o.phone, `Assalam o Alaikum ${o.customerName}, this is ${BRAND_NAME} about your order #${o.orderNumber}.`);
 
   return (
     <div className="space-y-6">
+      <div className="mb-2 hidden print:block">
+        <h2 className="text-3xl">{BRAND_NAME}</h2>
+        <p className="text-sm tracking-[0.14em] uppercase">Packing slip</p>
+      </div>
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/admin/orders" className="text-sm text-stone-500 hover:text-stone-800 print:hidden">
+          <Link href="/admin/orders" className="inline-flex min-h-11 items-center text-sm text-stone-500 hover:text-stone-800 print:hidden">
             ← Orders
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">Order #{o.orderNumber}</h1>
@@ -66,15 +71,16 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
           {/* Items */}
           <section className={card}>
             <h2 className="mb-3 font-semibold">Items</h2>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[20rem] text-sm">
               <tbody className="divide-y divide-stone-100">
                 {o.items.map((i) => (
                   <tr key={i.id}>
                     <td className="py-2 pr-3">
-                      <Link href={`/admin/products/${i.variant.productId}`} className="font-medium hover:underline print:no-underline">
+                      <Link href={`/admin/products/${i.variant.productId}`} className="inline-flex min-h-11 items-center font-medium hover:underline print:no-underline">
                         {variantLabel(i)}
                       </Link>
-                      <span className="block text-xs text-stone-400">{i.sku}</span>
+                      <span className="block text-[13px] text-stone-500">{i.sku}</span>
                     </td>
                     <td className="py-2 pr-3 text-right whitespace-nowrap">
                       {i.quantity} × {formatRs(i.priceAtSale)}
@@ -104,6 +110,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
                 </tr>
               </tfoot>
             </table>
+            </div>
           </section>
 
           {/* Actions */}
@@ -159,7 +166,7 @@ export default async function OrderPage({ params }: PageProps<"/admin/orders/[id
                   WhatsApp
                 </a>
               )}
-              <a href={`mailto:${o.email}?subject=${encodeURIComponent(`Your Lunara order #${o.orderNumber}`)}`} className={`${btnSecondary} !py-1 text-xs`}>
+              <a href={`mailto:${o.email}?subject=${encodeURIComponent(`Your ${BRAND_NAME} order #${o.orderNumber}`)}`} className={`${btnSecondary} !py-1 text-xs`}>
                 ✉ Email
               </a>
             </div>
@@ -254,7 +261,7 @@ function Actions({ o }: { o: AdminOrder }) {
           <ActionForm action={markRefundedAction.bind(null, o.id)} submitLabel="Mark refunded" submitClassName={btn}>
             <label className="block space-y-1">
               <span className={label}>Refund reference (optional)</span>
-              <input name="note" className={`${input} w-72`} placeholder="e.g. JazzCash refund ID" />
+              <input name="note" className={`${input} w-full max-w-72`} placeholder="e.g. JazzCash refund ID" />
             </label>
           </ActionForm>
         </div>

@@ -37,8 +37,8 @@ export default async function SubscribersPage({ searchParams }: PageProps<"/admi
         </a>
       </div>
 
-      <form className="flex gap-3" role="search">
-        <input name="q" defaultValue={data.q} placeholder="Search email" className={`${input} w-72`} aria-label="Search email" />
+      <form className="flex flex-col gap-3 sm:flex-row sm:items-center" role="search">
+        <input name="q" defaultValue={data.q} placeholder="Search email" className={`${input} w-full sm:w-72`} aria-label="Search email" />
         <button className={btnSecondary}>Search</button>
       </form>
 
@@ -53,7 +53,7 @@ export default async function SubscribersPage({ searchParams }: PageProps<"/admi
                   <a href={`mailto:${s.email}`} className="font-medium hover:underline">
                     {s.email}
                   </a>
-                  <span className="block text-xs text-stone-500">Joined {pkt.format(s.createdAt)}</span>
+                  <span className="block text-[13px] text-stone-500">Joined {pkt.format(s.createdAt)}</span>
                 </span>
                 <form action={removeAction.bind(null, s.id)}>
                   <ConfirmButton message={`Remove ${s.email} from the mailing list?`} className={`${btnDanger} !py-1 text-xs`}>

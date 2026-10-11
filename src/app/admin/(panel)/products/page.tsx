@@ -3,7 +3,7 @@ import Link from "next/link";
 import { badge, btn, btnSecondary, input } from "@/components/admin/ui";
 import { db } from "@/lib/db";
 import { CATEGORY_LABELS, designCode } from "@/lib/format";
-import { listAdminProducts } from "@/server/admin/products";
+import { listAdminProducts, type AdminProductRow } from "@/server/admin/products";
 import { requireAdmin } from "@/server/auth/admin-session";
 
 export const metadata = { title: "Products" };
@@ -36,7 +36,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
         <div className="w-full sm:w-64">
           <input name="q" defaultValue={filter.q} placeholder="Search name, SKU or article no." className={input} aria-label="Search" />
         </div>
-        <select name="category" defaultValue={filter.category ?? ""} className={`${input} w-auto`} aria-label="Category">
+        <select name="category" defaultValue={filter.category ?? ""} className={`${input} w-full sm:w-auto`} aria-label="Category">
           <option value="">All categories</option>
           {Object.entries(CATEGORY_LABELS).map(([v, l]) => (
             <option key={v} value={v}>
@@ -44,7 +44,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
             </option>
           ))}
         </select>
-        <select name="status" defaultValue={filter.status ?? "all"} className={`${input} w-auto`} aria-label="Status">
+        <select name="status" defaultValue={filter.status ?? "all"} className={`${input} w-full sm:w-auto`} aria-label="Status">
           {STATUS.map(([v, l]) => (
             <option key={v} value={v}>
               {l}
@@ -57,8 +57,41 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
       {rows.length === 0 ? (
         <p className="rounded-xl border border-dashed border-stone-300 p-8 text-center text-stone-500">No designs match.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-stone-200 bg-white">
-          <table className="w-full text-sm">
+        <>
+        <ul className="space-y-3 md:hidden">
+          {rows.map((r) => (
+            <li key={r.id} className="border border-[#e6e6e6] bg-white p-4">
+              <Link href={`/admin/products/${r.id}`} className="flex min-h-11 items-center gap-3">
+                <span className="relative h-11 w-11 shrink-0 overflow-hidden bg-[#f4f4f4]">
+                  {r.thumbnail && <Image src={r.thumbnail} alt="" fill sizes="44px" className="object-cover" unoptimized />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-medium text-[#1c1c1c]">{r.name}</span>
+                  <span className="block text-[13px] text-[#6b6b6b]">{designCode(r.category, r.articleNo)}</span>
+                </span>
+              </Link>
+              <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                <div>
+                  <dt className="text-[13px] text-[#6b6b6b]">Category</dt>
+                  <dd>{CATEGORY_LABELS[r.category]}</dd>
+                </div>
+                <div>
+                  <dt className="text-[13px] text-[#6b6b6b]">Rows</dt>
+                  <dd>{r.variantCount}</dd>
+                </div>
+                <div>
+                  <dt className="text-[13px] text-[#6b6b6b]">In stock</dt>
+                  <dd>{r.totalStock}</dd>
+                </div>
+              </dl>
+              <div className="mt-3 flex flex-wrap gap-1">
+                <ProductStatus r={r} />
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto border border-[#e6e6e6] bg-white md:block">
+          <table className="w-full min-w-[40rem] text-sm">
             <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-500">
               <tr>
                 <th className="p-3">Design</th>
@@ -72,13 +105,13 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
               {rows.map((r) => (
                 <tr key={r.id} className="hover:bg-stone-50">
                   <td className="p-3">
-                    <Link href={`/admin/products/${r.id}`} className="flex items-center gap-3">
+                    <Link href={`/admin/products/${r.id}`} className="flex min-h-11 items-center gap-3">
                       <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-stone-100">
                         {r.thumbnail && <Image src={r.thumbnail} alt="" fill sizes="40px" className="object-cover" unoptimized />}
                       </span>
                       <span>
                         <span className="block font-medium text-stone-900">{r.name}</span>
-                        <span className="text-xs text-stone-500">{designCode(r.category, r.articleNo)}</span>
+                        <span className="text-[13px] text-stone-500">{designCode(r.category, r.articleNo)}</span>
                       </span>
                     </Link>
                   </td>
@@ -87,18 +120,7 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
                   <td className="p-3 text-right">{r.totalStock}</td>
                   <td className="p-3">
                     <div className="flex flex-wrap gap-1">
-                      {r.isActive ? (
-                        <span className={`${badge} bg-emerald-50 text-emerald-700`}>Visible</span>
-                      ) : (
-                        <span className={`${badge} bg-stone-100 text-stone-600`}>Hidden</span>
-                      )}
-                      {r.isNewArrival && <span className={`${badge} bg-violet-50 text-violet-700`}>New</span>}
-                      {r.unpricedCount > 0 && (
-                        <span className={`${badge} bg-amber-50 text-amber-800`}>
-                          {r.unpricedCount} unpriced
-                        </span>
-                      )}
-                      {r.imageCount === 0 && <span className={`${badge} bg-stone-100 text-stone-600`}>No photos</span>}
+                      <ProductStatus r={r} />
                     </div>
                   </td>
                 </tr>
@@ -106,10 +128,26 @@ export default async function ProductsPage({ searchParams }: PageProps<"/admin/p
             </tbody>
           </table>
         </div>
+        </>
       )}
-      <p className="text-xs text-stone-500">
+      <p className="text-[13px] text-stone-500">
         Items only appear on the website when the design is Visible and the row has a selling price.
       </p>
     </div>
+  );
+}
+
+function ProductStatus({ r }: { r: AdminProductRow }) {
+  return (
+    <>
+      {r.isActive ? (
+        <span className={`${badge} bg-emerald-50 text-emerald-700`}>Visible</span>
+      ) : (
+        <span className={`${badge} bg-stone-100 text-stone-600`}>Hidden</span>
+      )}
+      {r.isNewArrival && <span className={`${badge} bg-violet-50 text-violet-700`}>New</span>}
+      {r.unpricedCount > 0 && <span className={`${badge} bg-amber-50 text-amber-800`}>{r.unpricedCount} unpriced</span>}
+      {r.imageCount === 0 && <span className={`${badge} bg-stone-100 text-stone-600`}>No photos</span>}
+    </>
   );
 }

@@ -98,3 +98,44 @@ body {
     color: #ffffff;
   }
 }
+
+/* Admin uses the same faces and palette as the shop. Amber, red, and violet alerts stay. */
+.admin {
+  background: #fff;
+  color: #1c1c1c;
+  font-variant-numeric: tabular-nums;
+  --color-stone-50: #ffffff;
+  --color-stone-100: #f4f4f4;
+  --color-stone-200: #e6e6e6;
+  --color-stone-300: #e6e6e6;
+  --color-stone-400: #6b6b6b;
+  --color-stone-500: #6b6b6b;
+  --color-stone-600: #6b6b6b;
+  --color-stone-700: #1c1c1c;
+  --color-stone-800: #1c1c1c;
+  --color-stone-900: #1c1c1c;
+  --color-stone-950: #1c1c1c;
+}
+
+.admin :is(h1, h2) {
+  font-family: var(--font-petrona), "Petrona", serif;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.admin :is(.rounded-sm, .rounded-md, .rounded-lg, .rounded-xl) {
+  border-radius: 0;
+}
+
+.admin label:has(:is(input[type="checkbox"], input[type="radio"])) {
+  min-height: 44px;
+}
+
+.admin :is(input[type="checkbox"], input[type="radio"]) {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.admin input[type="file"] {
+  min-height: 44px;
+}

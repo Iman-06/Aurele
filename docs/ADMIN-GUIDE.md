@@ -1,4 +1,4 @@
-# Lunara admin — owner's guide
+# Aurelé admin — owner's guide
 
 Sign in at **`/admin`** (e.g. `https://yourdomain.pk/admin`). Five wrong passwords lock the login for 15 minutes. Forgot the password? A developer runs `npm run admin:create` with your email to set a new one (this signs you out on every device).
 

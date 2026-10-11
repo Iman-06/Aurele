@@ -51,7 +51,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
         <div className="w-full sm:w-64">
           <input name="q" defaultValue={filter.q} placeholder="Search name, SKU or colour" className={input} aria-label="Search" />
         </div>
-        <select name="category" defaultValue={filter.category ?? ""} className={`${input} w-auto`} aria-label="Category">
+        <select name="category" defaultValue={filter.category ?? ""} className={`${input} w-full sm:w-auto`} aria-label="Category">
           <option value="">All categories</option>
           {Object.entries(CATEGORY_LABELS).map(([v, l]) => (
             <option key={v} value={v}>
@@ -59,7 +59,7 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
             </option>
           ))}
         </select>
-        <select name="status" defaultValue={filter.status ?? "all"} className={`${input} w-auto`} aria-label="Stock status">
+        <select name="status" defaultValue={filter.status ?? "all"} className={`${input} w-full sm:w-auto`} aria-label="Stock status">
           {STATUS.map(([v, l]) => (
             <option key={v} value={v}>
               {l}
@@ -85,23 +85,23 @@ export default async function InventoryPage({ searchParams }: PageProps<"/admin/
 function Row({ r }: { r: InventoryRow }) {
   const hidden = !r.isActive || !r.productActive;
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4 rounded-lg border border-stone-200 bg-white p-3">
-      <div className="min-w-48 flex-1">
-        <Link href={`/admin/products/${r.productId}`} className="font-medium hover:underline">
+    <div className="flex flex-col gap-4 border border-[#e6e6e6] bg-white p-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+      <div className="min-w-0 flex-1">
+        <Link href={`/admin/products/${r.productId}`} className="inline-flex min-h-11 items-center font-medium hover:underline">
           {r.productName}
         </Link>
         <p className="text-sm text-stone-600">
           {FINISH_LABELS[r.finish]}
           {r.colour !== NO_COLOUR && ` · ${r.colour}`}
-          {r.size && ` · size ${r.size}`} <span className="text-xs text-stone-400">{r.sku}</span>
+          {r.size && ` · size ${r.size}`} <span className="text-[13px] text-stone-500">{r.sku}</span>
         </p>
-        <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
+        <div className="mt-1 flex flex-wrap items-center gap-1 text-[13px]">
           {r.stock.status === "OUT_OF_STOCK" && <span className={`${badge} bg-red-50 text-red-700`}>Out of stock</span>}
           {r.stock.status === "LOW_STOCK" && <span className={`${badge} bg-amber-50 text-amber-800`}>Low stock</span>}
           {hidden && <span className={`${badge} bg-stone-100 text-stone-600`}>Hidden</span>}
           {r.sellingPrice === null && <span className={`${badge} bg-amber-50 text-amber-800`}>No price</span>}
           <span className="text-stone-500">{formatRs(r.sellingPrice)}</span>
-          <Link href={`/admin/inventory/${r.variantId}`} className="ml-2 text-stone-500 underline hover:text-stone-800">
+          <Link href={`/admin/inventory/${r.variantId}`} className="ml-2 inline-flex min-h-11 items-center text-stone-500 underline hover:text-stone-800">
             History
           </Link>
         </div>
@@ -113,11 +113,11 @@ function Row({ r }: { r: InventoryRow }) {
         resetKey={r.updatedAt.getTime()}
         submitLabel="Set"
         submitClassName={`${btnSecondary} !py-1`}
-        className="flex items-end gap-2"
+        className="flex w-full items-end gap-2 sm:w-auto"
       >
-        <label className="block space-y-1">
-          <span className="block text-xs text-stone-500">Quantity</span>
-          <input name="quantity" defaultValue={r.quantity} inputMode="numeric" className={`${input} w-20`} aria-label={`Quantity of ${r.productName} ${r.sku}`} />
+        <label className="block min-w-0 flex-1 space-y-1 sm:flex-none">
+          <span className="block text-[13px] text-stone-500">Quantity</span>
+          <input name="quantity" defaultValue={r.quantity} inputMode="numeric" className={`${input} w-full sm:w-20`} aria-label={`Quantity of ${r.productName} ${r.sku}`} />
         </label>
       </ActionForm>
 
@@ -126,11 +126,11 @@ function Row({ r }: { r: InventoryRow }) {
         submitLabel="+ Received"
         pendingLabel="Adding…"
         submitClassName={`${btn} !py-1`}
-        className="flex items-end gap-2"
+        className="flex w-full items-end gap-2 sm:w-auto"
       >
-        <label className="block space-y-1">
-          <span className="block text-xs text-stone-500">Arrived</span>
-          <input name="add" inputMode="numeric" placeholder="0" className={`${input} w-20`} aria-label={`Pieces received of ${r.productName} ${r.sku}`} />
+        <label className="block min-w-0 flex-1 space-y-1 sm:flex-none">
+          <span className="block text-[13px] text-stone-500">Arrived</span>
+          <input name="add" inputMode="numeric" placeholder="0" className={`${input} w-full sm:w-20`} aria-label={`Pieces received of ${r.productName} ${r.sku}`} />
         </label>
       </ActionForm>
     </div>

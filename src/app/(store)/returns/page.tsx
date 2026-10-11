@@ -4,7 +4,7 @@ import { SUPPORT_EMAIL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Returns — Aurelé",
-  description: "Aurelé’s 3-day exchange policy, and when a JazzCash payment is refunded. Aurele.",
+  description: "Aurelé’s 3-day exchange policy. If an order can’t be fulfilled, it is cancelled and the customer isn’t charged. Aurele.",
 };
 
 export default function ReturnsPage() {
@@ -38,7 +38,8 @@ export default function ReturnsPage() {
         <p>The fastest way to ensure you get what you want is to return the item you have, and once the return is accepted, make a separate purchase for the new item.</p>
       </PolicySection>
       <PolicySection heading="Refunds">
-        <p>We don’t offer refunds for change-of-mind returns or exchanges. If Aurelé is unable to fulfill your order — for example, if an item sells out before it ships — and you paid by JazzCash, that payment will be refunded in full.</p>
+        {/* TODO: When JazzCash goes live, restore the online-payment refund wording: if Aurelé cannot fulfil an order and the customer paid by JazzCash, that payment is refunded in full. */}
+        <p>We don’t offer refunds for change-of-mind returns or exchanges. If Aurelé can’t fulfil an order, the order is cancelled and the customer isn’t charged.</p>
         <p>We don’t offer exchanges on sale items.</p>
       </PolicySection>
     </Policy>

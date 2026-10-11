@@ -24,9 +24,9 @@ export function DeliveryFields(props: {
 
       {method === "COURIER" ? (
         <div className="flex flex-wrap gap-3">
-          <label className="block space-y-1">
+          <label className="block w-full space-y-1 sm:w-auto">
             <span className={label}>Courier</span>
-            <select name="courier" defaultValue={d.courier ?? ""} required className={`${input} w-auto`}>
+            <select name="courier" defaultValue={d.courier ?? ""} required className={`${input} w-full sm:w-auto`}>
               <option value="" disabled>
                 Choose…
               </option>
@@ -37,15 +37,15 @@ export function DeliveryFields(props: {
               ))}
             </select>
           </label>
-          <label className="block space-y-1">
+          <label className="block w-full space-y-1 sm:w-auto">
             <span className={label}>Tracking no. (optional)</span>
-            <input name="trackingNumber" defaultValue={d.trackingNumber ?? ""} placeholder="From the courier's receipt" className={`${input} w-56`} />
+            <input name="trackingNumber" defaultValue={d.trackingNumber ?? ""} placeholder="From the courier's receipt" className={`${input} w-full sm:w-56`} />
           </label>
         </div>
       ) : (
-        <label className="block space-y-1">
+        <label className="block w-full space-y-1 sm:max-w-sm">
           <span className={label}>Rider name / phone (optional)</span>
-          <input name="riderInfo" defaultValue={d.riderInfo ?? ""} className={`${input} w-64`} />
+          <input name="riderInfo" defaultValue={d.riderInfo ?? ""} className={`${input} w-full sm:w-64`} />
         </label>
       )}
     </div>

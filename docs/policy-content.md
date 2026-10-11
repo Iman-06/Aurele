@@ -5,11 +5,12 @@ NOTE: Two email addresses below are marked "(to be decided)" in the original bri
 Use a placeholder/config value (e.g. SUPPORT_EMAIL in an env var or constants file)
 so it's a one-line edit once the real support email exists — don't hardcode a fake one.
 
-NOTE ON REFUNDS: This brief says "we don't offer any refund policies," which is about
-change-of-mind returns. It does not override the backend's existing rule that a
-JazzCash payment is refunded if Aurelé cancels an order (e.g. sold out before
-shipping) — that refund case should still be stated on this page, worded as an
-exception for when Aurelé is unable to fulfill the order, not a general refund offer.
+NOTE ON REFUNDS: Launch is cash on delivery only. If Aurelé can't fulfil an order,
+the order is cancelled and the customer isn't charged.
+TODO: When JazzCash goes live, restore the online-payment refund wording: a JazzCash
+payment is refunded in full if Aurelé cancels an order (for example, sold out before
+shipping). That is an exception for when Aurelé cannot fulfil the order, not a
+general refund offer.
 
 ---
 
@@ -65,9 +66,9 @@ The fastest way to ensure you get what you want is to return the item you have,
 and once the return is accepted, make a separate purchase for the new item.
 
 **Refunds**
-We don't offer refunds for change-of-mind returns or exchanges. If Aurelé is
-unable to fulfill your order — for example, if an item sells out before it ships
-— and you paid by JazzCash, that payment will be refunded in full.
+<!-- TODO: When JazzCash goes live, restore the online-payment refund wording: if Aurelé cannot fulfil an order and the customer paid by JazzCash, that payment is refunded in full. -->
+We don't offer refunds for change-of-mind returns or exchanges. If Aurelé can't
+fulfil an order, the order is cancelled and the customer isn't charged.
 
 We don't offer exchanges on sale items.
 
