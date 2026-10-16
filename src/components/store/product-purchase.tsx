@@ -6,40 +6,121 @@ import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/cart-store";
 import { NO_COLOUR } from "@/lib/cart-types";
 import { formatRs } from "@/lib/format";
-import type { ProductDetail } from "@/server/catalog/catalog";
+import type { ColourOption, FinishOption, ProductDetail } from "@/server/catalog/catalog";
 import { ProductPlaceholder } from "./product-placeholder";
 
-const optionClass = (selected: boolean) =>
-  `min-h-11 border px-4 text-[0.7rem] tracking-[0.16em] uppercase transition-colors ${
-    selected ? "border-foreground bg-foreground text-background" : "border-line hover:border-gold"
-  }`;
+function firstColourIndex(finish: FinishOption): number {
+  const index = finish.colours.findIndex((colour) => colour.inStock);
+  return index >= 0 ? index : 0;
+}
+
+function firstVariantIndex(colour: ColourOption): number {
+  const index = colour.variants.findIndex((variant) => variant.stock.status !== "OUT_OF_STOCK");
+  return index >= 0 ? index : 0;
+}
+
+function initialSelection(product: ProductDetail) {
+  const empty = { finishIndex: 0, colourIndex: 0, variantIndex: 0 };
+  if (product.defaultVariantId == null) return empty;
+  for (let finishIndex = 0; finishIndex < product.finishes.length; finishIndex++) {
+    const finish = product.finishes[finishIndex];
+    for (let colourIndex = 0; colourIndex < finish.colours.length; colourIndex++) {
+      const colour = finish.colours[colourIndex];
+      const variantIndex = colour.variants.findIndex((variant) => variant.variantId === product.defaultVariantId);
+      if (variantIndex >= 0) return { finishIndex, colourIndex, variantIndex };
+    }
+  }
+  return empty;
+}
+
+function OptionBox({
+  selected,
+  soldOut,
+  label,
+  onSelect,
+}: {
+  selected: boolean;
+  soldOut: boolean;
+  label: string;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={soldOut}
+      aria-pressed={selected}
+      title={soldOut ? "Sold out" : undefined}
+      onClick={onSelect}
+      className={`relative inline-flex min-h-11 min-w-11 items-center justify-center border px-3 text-[0.7rem] tracking-[0.14em] uppercase ${
+        soldOut
+          ? "cursor-not-allowed border-[#d4d4d4] text-[#a3a3a3]"
+          : selected
+            ? "border-black text-black"
+            : "border-[#d4d4d4] text-black hover:border-black"
+      }`}
+    >
+      {soldOut && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top_right,transparent_calc(50%-0.5px),#bdbdbd_50%,transparent_calc(50%+0.5px))]"
+        />
+      )}
+      <span className="relative">{label}</span>
+    </button>
+  );
+}
 
 export function ProductPurchase({ product }: { product: ProductDetail }) {
   const addItem = useCartStore((s) => s.addItem);
   const openMiniCart = useCartStore((s) => s.openMiniCart);
-  const [finishIndex, setFinishIndex] = useState(0);
-  const [colourIndex, setColourIndex] = useState(0);
-  const [variantIndex, setVariantIndex] = useState(0);
+  const [selection, setSelection] = useState(() => initialSelection(product));
   const [imageIndex, setImageIndex] = useState(0);
   const [added, setAdded] = useState(false);
 
-  const finish = product.finishes[finishIndex] ?? product.finishes[0];
-  const colour = finish?.colours[Math.min(colourIndex, Math.max(finish.colours.length - 1, 0))];
-  const variant = colour?.variants[Math.min(variantIndex, Math.max(colour.variants.length - 1, 0))];
+  const finish = product.finishes[selection.finishIndex] ?? product.finishes[0];
+  const colour = finish?.colours[Math.min(selection.colourIndex, Math.max(finish.colours.length - 1, 0))];
+  const variant = colour?.variants[Math.min(selection.variantIndex, Math.max(colour.variants.length - 1, 0))];
   const images = colour ? colour.images : product.images;
   const activeIndex = images.length ? Math.min(imageIndex, images.length - 1) : 0;
   const photo = images[activeIndex];
+  const soldOut = !product.inStock || !variant || variant.stock.status === "OUT_OF_STOCK";
+  const showSize = product.category === "RINGS" || Boolean(colour?.showSizeSelector);
 
   function chooseFinish(index: number) {
-    setFinishIndex(index);
-    setColourIndex(0);
-    setVariantIndex(0);
+    const next = product.finishes[index];
+    if (!next?.inStock) return;
+    const colourIndex = firstColourIndex(next);
+    const nextColour = next.colours[colourIndex];
+    setSelection({
+      finishIndex: index,
+      colourIndex,
+      variantIndex: nextColour ? firstVariantIndex(nextColour) : 0,
+    });
     setImageIndex(0);
     setAdded(false);
   }
 
+  function chooseColour(index: number) {
+    if (!finish) return;
+    const next = finish.colours[index];
+    if (!next?.inStock) return;
+    setSelection((current) => ({
+      ...current,
+      colourIndex: index,
+      variantIndex: firstVariantIndex(next),
+    }));
+    setImageIndex(0);
+    setAdded(false);
+  }
+
+  function chooseSize(index: number) {
+    if (!colour || colour.variants[index]?.stock.status === "OUT_OF_STOCK") return;
+    setSelection((current) => ({ ...current, variantIndex: index }));
+    setAdded(false);
+  }
+
   function add() {
-    if (!finish || !colour || !variant) return;
+    if (!finish || !colour || !variant || variant.stock.status === "OUT_OF_STOCK") return;
     addItem({
       variantId: variant.variantId,
       productId: product.id,
@@ -87,23 +168,28 @@ export function ProductPurchase({ product }: { product: ProductDetail }) {
 
       <div className="flex flex-col gap-8">
         <div className="space-y-3">
+          {product.isOneOfAKind && (
+            <p className="text-[11px] tracking-[0.14em] uppercase">One of a Kind</p>
+          )}
           <h1 className="text-2xl font-normal">{product.name}</h1>
           <p className="text-sm">{variant ? formatRs(variant.price) : formatRs(product.priceFrom)}</p>
           {product.description && <p className="max-w-md text-sm leading-relaxed text-muted">{product.description}</p>}
         </div>
 
-        {!product.inStock || !finish || !colour || !variant ? (
-          <p className="text-[0.7rem] tracking-[0.18em] text-muted uppercase">Out of Stock</p>
-        ) : (
+        {finish && (
           <>
             {product.showFinishSelector && (
               <fieldset className="space-y-3">
                 <legend className="text-[0.7rem] tracking-[0.18em] text-muted uppercase">Finish</legend>
                 <div className="flex flex-wrap gap-3">
                   {product.finishes.map((option, index) => (
-                    <button key={option.finish} type="button" className={optionClass(index === finishIndex)} onClick={() => chooseFinish(index)}>
-                      {option.label}
-                    </button>
+                    <OptionBox
+                      key={option.finish}
+                      label={option.label}
+                      soldOut={!option.inStock}
+                      selected={option.inStock && index === selection.finishIndex}
+                      onSelect={() => chooseFinish(index)}
+                    />
                   ))}
                 </div>
               </fieldset>
@@ -115,50 +201,48 @@ export function ProductPurchase({ product }: { product: ProductDetail }) {
                 <div className="flex flex-wrap gap-3">
                   {finish.colours.map((option, index) =>
                     option.colour === NO_COLOUR ? null : (
-                      <button
+                      <OptionBox
                         key={option.colour}
-                        type="button"
-                        className={optionClass(option.colour === colour.colour)}
-                        onClick={() => {
-                          setColourIndex(index);
-                          setVariantIndex(0);
-                          setImageIndex(0);
-                          setAdded(false);
-                        }}
-                      >
-                        {option.colour}
-                      </button>
+                        label={option.colour}
+                        soldOut={!option.inStock}
+                        selected={option.inStock && option.colour === colour?.colour}
+                        onSelect={() => chooseColour(index)}
+                      />
                     ),
                   )}
                 </div>
               </fieldset>
             )}
 
-            {colour.showSizeSelector && (
+            {showSize && colour && (
               <fieldset className="space-y-3">
                 <legend className="text-[0.7rem] tracking-[0.18em] text-muted uppercase">Size</legend>
                 <div className="flex flex-wrap gap-3">
-                  {colour.variants.map((option, index) => (
-                    <button
-                      key={option.variantId}
-                      type="button"
-                      className={optionClass(option.variantId === variant.variantId)}
-                      onClick={() => {
-                        setVariantIndex(index);
-                        setAdded(false);
-                      }}
-                    >
-                      {option.size}
-                    </button>
-                  ))}
+                  {colour.variants.map((option, index) => {
+                    const optionSoldOut = option.stock.status === "OUT_OF_STOCK";
+                    return (
+                      <OptionBox
+                        key={option.variantId}
+                        label={option.size || "One size"}
+                        soldOut={optionSoldOut}
+                        selected={!optionSoldOut && option.variantId === variant?.variantId}
+                        onSelect={() => chooseSize(index)}
+                      />
+                    );
+                  })}
                 </div>
               </fieldset>
             )}
+          </>
+        )}
 
-            {variant.stock.status === "LOW_STOCK" && (
+        {soldOut ? (
+          <p className="text-[0.7rem] tracking-[0.18em] text-muted uppercase">{product.isOneOfAKind ? "Sold" : "Sold out"}</p>
+        ) : (
+          <>
+            {variant?.stock.status === "LOW_STOCK" && (
               <p className="text-[0.7rem] tracking-[0.18em] text-gold uppercase">Only {variant.stock.left} left</p>
             )}
-
             <div className="self-start">
               <Button variant="add" onClick={add} disabled={added} className="disabled:opacity-40">
                 {added ? "Added" : "Add to Bag"}

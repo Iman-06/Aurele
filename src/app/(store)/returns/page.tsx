@@ -1,25 +1,30 @@
 import type { Metadata } from "next";
 import { Policy, PolicySection } from "@/components/store/policy";
+import { db } from "@/lib/db";
 import { SUPPORT_EMAIL } from "@/lib/site";
+import { getStoreDetails } from "@/server/settings";
 
 export const metadata: Metadata = {
-  title: "Returns — Aurelé",
+  title: "Return & Exchange Policy — Aurelé",
   description: "Aurelé’s 3-day exchange policy. If an order can’t be fulfilled, it is cancelled and the customer isn’t charged. Aurele.",
 };
 
-export default function ReturnsPage() {
+export default async function ReturnsPage() {
+  const details = await getStoreDetails(db).catch(() => null);
+  const supportEmail = details?.supportEmail ?? SUPPORT_EMAIL;
+
   return (
-    <Policy title="Returns">
+    <Policy title="Return & Exchange Policy">
       <p className="text-muted">We have a 3-day exchange policy, which means you have 3 days after receiving your item to request an exchange.</p>
       <p className="text-muted">
         To be eligible for an exchange, your item must be in the same condition that you received it, unworn or unused, with tags, and in its original packaging. You’ll also need the receipt or proof of purchase. Delivery charges will not be included in the exchange value; only the item’s price will be considered.
       </p>
       <p className="text-muted">
-        {SUPPORT_EMAIL ? (
+        {supportEmail ? (
           <>
             To start an exchange, contact us at{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-foreground underline">
-              {SUPPORT_EMAIL}
+            <a href={`mailto:${supportEmail}`} className="text-foreground underline">
+              {supportEmail}
             </a>
             .{" "}
           </>

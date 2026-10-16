@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { Policy, PolicySection } from "@/components/store/policy";
 
 export const metadata: Metadata = {
-  title: "Shipping — Aurelé",
+  title: "Shipping Policy — Aurelé",
   description: "How Aurelé packs, processes, and delivers orders in Pakistan. Aurele.",
 };
 
 export default function ShippingPage() {
   return (
-    <Policy title="Shipping">
+    <Policy title="Shipping Policy">
       <p className="text-muted">
         At Aurelé, we ensure that your exquisite jewelry reaches you safely, securely, and on time. All orders are carefully packaged with premium protective materials to maintain the pristine condition of your purchase.
       </p>

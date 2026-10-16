@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Wordmark } from "@/components/store/brand-mark";
-import { CuratedTiles } from "@/components/store/curated-tiles";
 import { HomeHero } from "@/components/store/home-hero";
 import { JustInCarousel } from "@/components/store/just-in-carousel";
 import { NewsletterForm } from "@/components/store/newsletter-form";
+import { OneOfAKindFeature } from "@/components/store/one-of-a-kind-feature";
 import { db } from "@/lib/db";
 import { ELEGANCE_TILES } from "@/lib/curated-tiles";
 import { publicImage } from "@/lib/public-image";
@@ -20,9 +20,10 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [home, arrivals] = await Promise.all([
+  const [home, arrivals, oneOfAKind] = await Promise.all([
     getHomeContent(db),
     listProducts(db, { sort: "newest", pageSize: 12 }),
+    listProducts(db, { oneOfAKind: true, pageSize: 2 }),
   ]);
   const { banner, promotion } = home;
   const tiles = ELEGANCE_TILES.map((tile) => ({ ...tile, src: publicImage(tile.image) }));
@@ -71,25 +72,19 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <CuratedTiles />
+      <OneOfAKindFeature products={oneOfAKind.items} />
 
-      <section className="mx-auto w-full max-w-6xl px-8 py-20 sm:px-12">
-        <div className="mx-auto max-w-xl text-center">
-          <h2 className="font-display text-3xl font-normal tracking-[0.06em] uppercase">Elegance</h2>
-          <p className="mt-4 text-sm leading-relaxed text-muted">
-            Pieces finished to be worn every day — from the earring you forget you’re wearing to the ring you don’t take off.
-          </p>
-        </div>
-        <ul className="mt-12 grid gap-10 sm:grid-cols-2">
+      <section aria-label="Shop by category" className="py-16 sm:py-20">
+        <ul className="flex snap-x snap-mandatory gap-6 overflow-x-auto px-8 pb-2 sm:px-12">
           {tiles.map((tile) => (
-            <li key={tile.href}>
-              <Link href={tile.href} aria-label={`Shop ${tile.title}`} className="relative block aspect-square overflow-hidden bg-[#2a2a2a]">
-                {tile.src && <Image src={tile.src} alt="" fill sizes="(min-width: 640px) 40vw, 100vw" className="object-cover" />}
+            <li key={tile.href} className="w-[78vw] max-w-[20rem] shrink-0 snap-start">
+              <Link href={tile.href} aria-label={`Shop ${tile.title}`} className="relative block aspect-[3/4] overflow-hidden bg-[#2a2a2a]">
+                {tile.src && <Image src={tile.src} alt="" fill sizes="20rem" className="object-cover" />}
               </Link>
               <div className="mt-5 flex items-center justify-between gap-4">
                 <p className="text-sm">{tile.title}</p>
-                <Link href={tile.href} className="btn btn-add">
-                  Shop
+                <Link href={tile.href} className="btn btn-choose">
+                  Discover
                 </Link>
               </div>
             </li>

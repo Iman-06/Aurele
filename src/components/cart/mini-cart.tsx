@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { selectItems, useCartHydrated, useCartStore } from "@/lib/cart-store";
 import { MAX_PER_ITEM, NO_COLOUR, type CartItem } from "@/lib/cart-types";
 import { formatRs } from "@/lib/format";
@@ -118,9 +117,9 @@ export function MiniCart() {
                 <span className="text-muted">Subtotal</span>
                 <span className="tabular-nums">{formatRs(subtotal)}</span>
               </div>
-              <Button variant="add" className="w-full" disabled>
-                Checkout — coming soon
-              </Button>
+              <Link href="/checkout" onClick={close} className="btn btn-add w-full">
+                Checkout
+              </Link>
               <Link href="/cart" onClick={close} className="block text-center text-[0.7rem] tracking-[0.16em] uppercase hover:opacity-60">
                 View cart
               </Link>

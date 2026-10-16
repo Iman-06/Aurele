@@ -23,14 +23,9 @@ export function categoryBySlug(slug: string): StoreCategory | undefined {
   return BY_SLUG.get(slug.toLowerCase());
 }
 
-/**
- * "Choose" when the customer still has a finish or colour decision.
- * A single finish and a single colour (or none) is "Add".
- * Ring sizes are not on the list response — see the product page if a later
- * detail fetch turns up more than one variant.
- */
-export function needsChoice(card: Pick<ProductCard, "finishes" | "colours">): boolean {
-  return card.finishes.length > 1 || card.colours.length > 1;
+/** Rings always open the product page. Other categories do when more than one option exists. */
+export function needsChoice(card: Pick<ProductCard, "hasMultipleOptions" | "category">): boolean {
+  return card.category === "RINGS" || card.hasMultipleOptions;
 }
 
 export function priceRange(from: number, to: number): string {

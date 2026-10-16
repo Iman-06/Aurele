@@ -28,7 +28,12 @@ export function ProductCardView({
         </Link>
         {!product.inStock && (
           <span className="pointer-events-none absolute top-3 left-3 bg-[#efefef] px-2 py-1 text-[11px] tracking-[0.08em] text-black/65 uppercase">
-            Sold out
+            {product.isOneOfAKind ? "Sold" : "Sold out"}
+          </span>
+        )}
+        {product.isOneOfAKind && (
+          <span className="pointer-events-none absolute top-3 right-3 bg-white px-2 py-1 text-[11px] tracking-[0.08em] uppercase">
+            One of a Kind
           </span>
         )}
         {product.inStock && (

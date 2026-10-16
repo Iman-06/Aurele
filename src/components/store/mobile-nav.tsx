@@ -65,6 +65,9 @@ export function MobileNav() {
               <Link href="/new-arrivals" className={itemClass} onClick={(event) => { event.preventDefault(); follow("/new-arrivals"); }}>
                 New Arrivals
               </Link>
+              <Link href="/one-of-a-kind" className={itemClass} onClick={(event) => { event.preventDefault(); follow("/one-of-a-kind"); }}>
+                One of a Kind
+              </Link>
               <Link href="/store" className={itemClass} onClick={(event) => { event.preventDefault(); follow("/store"); }}>
                 Store
               </Link>

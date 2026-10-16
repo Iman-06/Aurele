@@ -22,7 +22,7 @@ export function AddButton({ slug, className = "" }: { slug: string; className?: 
       const options = product.finishes.flatMap((finish) =>
         finish.colours.flatMap((colour) => colour.variants.map((variant) => ({ finish, colour, variant }))),
       );
-      if (options.length !== 1) {
+      if (product.category === "RINGS" || options.length !== 1) {
         router.push(`/products/${slug}`);
         return;
       }

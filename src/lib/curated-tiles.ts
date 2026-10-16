@@ -25,6 +25,13 @@ export const ELEGANCE_TILES: CuratedTile[] = [
     href: "/rings",
     image: "/tiles/elegance-rings.jpg",
   },
+  {
+    id: "elegance-necklace",
+    label: "Necklace",
+    title: "Necklace",
+    href: "/necklaces",
+    image: "/tiles/elegance-necklace.jpg",
+  },
 ];
 
 export const CURATED_TILES: CuratedTile[] = [

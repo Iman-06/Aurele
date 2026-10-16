@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { selectItems, useCartHydrated, useCartStore } from "@/lib/cart-store";
 import { MAX_PER_ITEM, NO_COLOUR, maxQuantityFor, type CartItem, type CartLine, type CartSummary } from "@/lib/cart-types";
 import { formatRs } from "@/lib/format";
@@ -211,9 +210,9 @@ export function CartView() {
         {checkoutBlocked ? (
           <p className="text-xs text-gold">Please remove the unavailable items before checking out.</p>
         ) : (
-          <Button variant="add" className="w-full" disabled>
-            Checkout — coming soon
-          </Button>
+          <Link href="/checkout" className="btn btn-add w-full">
+            Checkout
+          </Link>
         )}
 
         <button
