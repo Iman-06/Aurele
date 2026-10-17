@@ -87,10 +87,10 @@ export async function saveBanner(db: PrismaClient, input: Record<string, unknown
     throw new DomainError("INVALID_INPUT", "Upload a banner photo before switching the banner on");
   }
 
-  const imageUrl = hasFile(files.image) ? await saveImage(files.image) : (current?.imageUrl ?? null);
+  const imageUrl = hasFile(files.image) ? await saveImage(files.image, "homepage") : (current?.imageUrl ?? null);
   let mobileImageUrl = current?.mobileImageUrl ?? null;
   try {
-    if (hasFile(files.mobileImage)) mobileImageUrl = await saveImage(files.mobileImage);
+    if (hasFile(files.mobileImage)) mobileImageUrl = await saveImage(files.mobileImage, "homepage");
     else if (d.removeMobileImage) mobileImageUrl = null;
   } catch (e) {
     if (imageUrl && imageUrl !== current?.imageUrl) await removeImage(imageUrl); // undo the first upload

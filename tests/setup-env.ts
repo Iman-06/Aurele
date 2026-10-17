@@ -7,3 +7,8 @@ const url = assertLocalTestDbUrl(process.env.TEST_DATABASE_URL);
 process.env.DATABASE_URL = url;
 process.env.DIRECT_URL = url;
 process.env.CRON_SECRET ??= "test-cron-secret-value";
+// Never upload to the shop's real Cloudinary account from tests: photos are saved locally instead.
+// (tests/media-storage.test.ts sets fake keys and a fake fetch for its Cloudinary checks.)
+delete process.env.CLOUDINARY_CLOUD_NAME;
+delete process.env.CLOUDINARY_API_KEY;
+delete process.env.CLOUDINARY_API_SECRET;

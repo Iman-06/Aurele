@@ -14,9 +14,11 @@ All endpoints return JSON. Prices are in **PKR** as plain numbers. Errors always
 | 429 | `TOO_MANY_REQUESTS` | more than 5 orders in an hour from the same phone or email — show `message` (it suggests WhatsApp) |
 | 500 | `SERVER_ERROR` | generic "please try again" |
 
+**Image URLs** (`image.url`, `images[].url`, banner photos) are either `https://res.cloudinary.com/<shop cloud>/…` (live photos) or `/media/…` (photos saved locally on a laptop without the Cloudinary keys). Both work with `next/image` — Cloudinary is allowed in `next.config.ts`.
+
 You can also call the functions directly from Server Components / Server Actions instead of `fetch` — each endpoint is a thin wrapper over a function in `src/server/` (named below).
 
-**Rules the backend already enforces** (don't re-implement): only priced + active items are visible; sold-out combinations are never offered; stock is never reserved; COD takes stock when placed, JazzCash when paid; prices always come from the database; the SKU is never exposed.
+**Rules the backend already enforces** (don't re-implement): only priced + active items are visible; sold-out combinations are shown but can never be bought; stock is never reserved; COD takes stock when placed, JazzCash when paid; prices always come from the database; the SKU is never exposed.
 
 ---
 
@@ -127,8 +129,8 @@ this replaces the `ANNOUNCEMENT`, `INSTAGRAM_URL`, `ABOUT_BLURB` constants in `s
 
 ## Checkout (Track 3)
 
-### `POST /api/orders` — place an order
-`placeOrder()` in `src/server/orders/orders.ts`
+### `POST /api/checkout` — place an order (what the checkout page calls)
+`src/app/api/checkout/route.ts` → the payment provider for `paymentMethod` (`src/server/payments/`) → `placeOrder()`.
 
 ```json
 {
@@ -138,22 +140,55 @@ this replaces the `ANNOUNCEMENT`, `INSTAGRAM_URL`, `ABOUT_BLURB` constants in `s
   "paymentMethod": "COD"
 }
 ```
-→ `201` with the order (no internal ids): `orderNumber`, `status`, `paymentMethod`, `paymentStatus`, `customer`, `items[] {name,label,finish,colour,size,quantity,unitPrice,lineTotal}`, `subtotal`, `shippingFee`, `total`.
+`postalCode` is optional (`null` or left out). Prices, totals and stock are always worked out on the server — never send prices.
 
-Once the owner marks it shipped, the order also has `delivery: { method: "OWN" | "COURIER", courier, trackingNumber, shippedAt }` (`null` before shipping; `trackingNumber` may be `null` — own delivery never has one). Use it in the "your order is on its way" email.
+→ `201`:
+```json
+{
+  "order": {
+    "orderNumber": "10001",
+    "status": "NEW",
+    "paymentMethod": "COD",
+    "paymentStatus": "UNPAID",
+    "customer": { "name": "Sara Ahmed", "email": "sara@example.com", "phone": "0321 1234567",
+                  "address": "12 Mall Road", "city": "Lahore", "postalCode": "54000" },
+    "items": [{ "name": "Aveline Pearl Drop", "label": "Aveline Pearl Drop — Gold, Blue", "finish": "GOLD", "colour": "Blue",
+                "size": "", "quantity": 1, "unitPrice": 2500, "lineTotal": 2500 }],
+    "delivery": null,
+    "subtotal": 2500, "shippingFee": 250, "total": 2750,
+    "createdAt": "2026-10-17T10:15:00.000Z"
+  },
+  "next": { "type": "CONFIRMATION" }
+}
+```
+- `next.type === "CONFIRMATION"` → clear the cart and show the confirmation page. (Later, JazzCash will answer
+  `{ "type": "REDIRECT", "url": "…", "formFields": { … } }` → send the customer to the payment page.)
+- **COD** (the only method switched on now): `status: "NEW"`, stock is taken immediately. The customer's confirmation
+  email and the owner's new-order email are sent in the background (Resend; a failed email never fails the order).
+- **JAZZCASH**: not available yet → `400 INVALID_INPUT` "JazzCash is not available yet. Please choose Cash on Delivery."
+- Once the owner marks the order shipped, `delivery` becomes `{ "method": "OWN" | "COURIER", "courier", "trackingNumber", "shippedAt" }`
+  (`trackingNumber` may be `null` — own delivery never has one).
 
-- **COD** → `status: "NEW"`, stock already taken → show confirmation + send the confirmation email.
-- **JAZZCASH** → `status: "AWAITING_PAYMENT"`, nothing taken → redirect to JazzCash with `orderNumber` as the bill reference and `total` as the amount.
-- `409 OUT_OF_STOCK` → show `message`, send the customer back to the refreshed cart. Exact numbers appear only at or below the low-stock limit ("Only 2 left of …"); above it the message says "Not enough stock … choose a smaller quantity".
-- `409 NOT_PURCHASABLE` → an item was hidden/unpriced since it was added; the message is generic on purpose. `details.variantIds` lists which cart lines to remove.
-- At most **20 of one item** per order (repeated lines are added together).
-- Signed-in customers: link the order on the server with `placeOrder(db, input, { customerId })` from your session — a `customerId` in the request body is ignored.
-- Request bodies over 64 KB are rejected.
+Errors (same body format as above):
+- `400 INVALID_INPUT` — a form field is wrong; `message` says which, `details` has the field issues.
+- `409 OUT_OF_STOCK` → show `message`, send the customer back to the refreshed cart. Exact numbers appear only at or below
+  the low-stock limit ("Only 2 left of …"); above it the message says "Not enough stock … choose a smaller quantity".
+- `409 NOT_PURCHASABLE` → an item was hidden/unpriced since it was added; `details.variantIds` lists which cart lines to remove.
+- `429 TOO_MANY_REQUESTS` → more than 5 orders in an hour from the same phone or email.
+- At most **20 of one item** per order (repeated lines are added together). Request bodies over 64 KB are rejected.
+- Signed-in customers: link the order on the server from your session (`CreatePaymentContext.customerId`) — a
+  `customerId` in the request body is ignored.
 
-⚠️ Order numbers are sequential — **never** build a public "look up order by number" page without a secret token.
+### `POST /api/orders` — low-level order placement (no emails)
+Same body and errors as `/api/checkout`, but returns the bare order object (the `order` above, without `next`) and
+sends **no** emails. Kept for scripts and tests — **the storefront should use `/api/checkout`**.
 
-### JazzCash return / IPN handler (you build the route)
-After verifying JazzCash's secure hash, for a **successful** payment call:
+⚠️ Order numbers are sequential (10001, 10002, …) — anyone can guess them. Never show an order's customer details on a
+page that only needs the order number; use a secret token or show only non-personal details.
+
+### JazzCash return / IPN handler (Phase 5 — not live yet)
+`/api/payments/jazzcash/return` and `/api/payments/jazzcash/ipn` exist as placeholders and answer `501` until the
+official JazzCash documentation and sandbox credentials arrive. When building them: after verifying JazzCash's secure hash, for a **successful** payment call:
 
 ```ts
 import { confirmJazzCashPayment } from "@/server/orders/orders";

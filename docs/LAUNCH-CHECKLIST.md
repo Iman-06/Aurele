@@ -17,9 +17,11 @@ Everything that must be true before real customers use the site. Owner tasks are
 - [ ] Site served over **HTTPS** only (admin cookie is `Secure` in production).
 
 ## 3. Photos → cloud storage (Track 2)
-- [ ] Create a Cloudinary (or Supabase Storage) account.
-- [ ] Replace `saveImage` / `removeImage` / `readImage` in `src/server/media/storage.ts` with the provider's upload/delete; the database only stores the URL, so nothing else changes.
-- [ ] Add the provider's domain to `images.remotePatterns` in `next.config.ts` if `next/image` is used for photos.
+- [x] Cloudinary account created (theaurele.co@gmail.com).
+- [x] `src/server/media/storage.ts` uploads to / deletes from Cloudinary when the `CLOUDINARY_*` keys are set (folders `aurele/products`, `aurele/homepage`).
+- [x] `res.cloudinary.com/<cloud name>` allowed in `images.remotePatterns` (`next.config.ts`).
+- [ ] Add `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` to the hosting environment variables.
+- [ ] Any photos uploaded before the switch (`/media/…` URLs) exist only on the uploader's laptop — re-upload them in the admin.
 - Hosting platforms like Vercel **do not keep files written to disk** — uploads would disappear without this step.
 
 ## 4. Scheduled job
@@ -32,7 +34,7 @@ Everything that must be true before real customers use the site. Owner tasks are
 
 ## 6. Security
 - [ ] Bot / abuse protection on public `POST` endpoints (`/api/orders`, `/api/subscribe`, `/admin/login`) at the hosting layer (e.g. Vercel Firewall per-IP rate limits). The app itself limits orders to 5/hour per phone or email and 20 of one item per order, but a determined bot can vary phone numbers — an IP limit is still needed.
-- [ ] Photos: strip EXIF/GPS location data on upload (Cloudinary can do this automatically) so phone photos don't reveal where they were taken.
+- [x] Photos: EXIF/GPS location data is stripped — Cloudinary re-encodes every upload (max 2400px) so phone photos don't reveal where they were taken.
 - [ ] `npm audit` re-checked. Known at handoff (2026-10-01): findings only in Prisma's CLI (bundled MySQL driver — unused, we use PostgreSQL; config merging of our own config file) and ExcelJS's `uuid` helper (affected function not used). The suggested "fix" downgrades both — don't apply; update when patched versions are released.
 - [ ] If the site sits behind another proxy/CDN domain, add it to `experimental.serverActions.allowedOrigins` in `next.config.ts`.
 
