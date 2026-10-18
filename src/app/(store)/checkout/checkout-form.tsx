@@ -22,7 +22,7 @@ type FormErrors = {
 
 export function CheckoutForm() {
   const router = useRouter();
-  const { rawItems, orderPayload, isHydrated, isEmpty, clearCart, addDevTestItem } = useCheckoutCart();
+  const { rawItems, orderPayload, isHydrated, isEmpty, addDevTestItem } = useCheckoutCart();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,6 +34,7 @@ export function CheckoutForm() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [validatedCart, setValidatedCart] = useState<CartSummary | null>(null);
   const [isValidating, setIsValidating] = useState(false);
 
@@ -79,6 +80,17 @@ export function CheckoutForm() {
     };
   }, [isHydrated, rawItems]);
 
+  const linesByVariant = useMemo(
+    () => new Map((validatedCart?.lines ?? []).map((l) => [l.variantId, l])),
+    [validatedCart],
+  );
+
+  const hasSoldOut = useMemo(() => {
+    return (validatedCart?.lines ?? []).some(
+      (l) => l.problem === "OUT_OF_STOCK" || l.problem === "UNAVAILABLE",
+    );
+  }, [validatedCart]);
+
   const subtotal = useMemo(() => {
     if (validatedCart) return validatedCart.subtotal;
     return rawItems.reduce((acc, item) => acc + item.priceAtAdd * item.quantity, 0);
@@ -117,7 +129,14 @@ export function CheckoutForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (isSubmitting || isNavigating) return;
+
+    if (hasSoldOut) {
+      setErrors({
+        general: "One or more items in your cart are currently sold out. Please remove them from your bag before checking out.",
+      });
+      return;
+    }
 
     if (!validateForm()) {
       return;
@@ -154,7 +173,10 @@ export function CheckoutForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        const errorMsg = data?.error?.message || "Could not place your order. Please check your details and try again.";
+        let errorMsg = data?.error?.message || "Could not place your order. Please check your details and try again.";
+        if (res.status === 409 || data?.error?.code === "OUT_OF_STOCK") {
+          errorMsg = "One of the pieces in your order just sold out. No order was placed. Please return to your bag to update your selection.";
+        }
         setErrors({ general: errorMsg });
         setIsSubmitting(false);
         return;
@@ -165,17 +187,22 @@ export function CheckoutForm() {
       // Track purchase event
       trackPurchase(order);
 
-      // Clear the local cart
-      clearCart();
+      // Do NOT clear the cart state immediately here: clearing cart prematurely causes
+      // the checkout UI to flash an "Empty Cart" message before router navigation completes.
+      // Instead, we navigate directly to the confirmation page, which clears the cart on mount.
+      setIsNavigating(true);
 
-      // Navigate to confirmation page
-      router.push(`/order/${order.orderNumber}`);
+      const confirmationUrl = order.token
+        ? `/order/${order.orderNumber}?token=${encodeURIComponent(order.token)}`
+        : `/order/${order.orderNumber}`;
+      router.push(confirmationUrl);
     } catch (err) {
       console.error("[checkout] Submission error:", err);
       setErrors({
         general: "A network error occurred while placing your order. Please try again.",
       });
       setIsSubmitting(false);
+      setIsNavigating(false);
     }
   };
 
@@ -187,7 +214,9 @@ export function CheckoutForm() {
     );
   }
 
-  if (isEmpty) {
+  // Only show empty cart screen if the cart is truly empty and the user is NOT in the middle of
+  // submitting an order or transitioning to the confirmation page.
+  if (isEmpty && !isSubmitting && !isNavigating) {
     return (
       <div className="mx-auto max-w-xl py-20 text-center space-y-6">
         <h1 className="text-xl font-light tracking-[0.2em] uppercase">Your Cart is Empty</h1>
@@ -211,11 +240,61 @@ export function CheckoutForm() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-8 lg:px-12">
+    <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-8 lg:px-12">
+      {/* Full-screen Loading Overlay during checkout processing and transition */}
+      {(isSubmitting || isNavigating) && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-xs transition-opacity duration-200">
+          <div className="flex flex-col items-center gap-4 rounded border border-line bg-surface p-8 shadow-sm text-center max-w-sm mx-4">
+            <svg
+              className="size-8 animate-spin text-foreground"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            <div className="space-y-1">
+              <p className="text-sm font-medium tracking-wider uppercase text-foreground">
+                {isNavigating ? "Order Confirmed" : "Placing Your Order"}
+              </p>
+              <p className="text-xs text-muted">
+                {isNavigating
+                  ? "Redirecting to your order confirmation…"
+                  : "Please wait while we secure your pieces…"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-10 text-center sm:text-left">
         <h1 className="text-lg font-light tracking-[0.3em] uppercase">Checkout</h1>
         <p className="mt-1 text-xs tracking-wider text-muted uppercase">Complete your delivery & payment</p>
       </div>
+
+      {hasSoldOut && (
+        <div className="mb-8 border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <p className="font-medium">One or more items in your cart are currently sold out.</p>
+            <p className="text-xs text-amber-800 mt-0.5">Please remove sold-out items from your bag before placing your order.</p>
+          </div>
+          <Link href="/cart" className="text-xs font-semibold tracking-wider uppercase underline whitespace-nowrap hover:text-black">
+            Update Shopping Bag &rarr;
+          </Link>
+        </div>
+      )}
 
       {errors.general && (
         <div className="mb-8 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800">
@@ -243,10 +322,11 @@ export function CheckoutForm() {
                   id="name"
                   type="text"
                   required
+                  disabled={isSubmitting || isNavigating}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Ayesha Khan"
-                  className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none"
+                  className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none disabled:opacity-60"
                 />
                 {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name}</p>}
               </div>
@@ -259,10 +339,11 @@ export function CheckoutForm() {
                   id="email"
                   type="email"
                   required
+                  disabled={isSubmitting || isNavigating}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none"
+                  className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none disabled:opacity-60"
                 />
                 <p className="mt-1 text-[0.65rem] text-muted">Order confirmation will be sent here.</p>
                 {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
@@ -276,10 +357,11 @@ export function CheckoutForm() {
                   id="phone"
                   type="tel"
                   required
+                  disabled={isSubmitting || isNavigating}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="0300 1234567"
-                  className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none"
+                  className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none disabled:opacity-60"
                 />
                 <p className="mt-1 text-[0.65rem] text-muted">Courier rider calls before delivery.</p>
                 {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
@@ -304,10 +386,11 @@ export function CheckoutForm() {
                   id="address"
                   required
                   rows={2}
+                  disabled={isSubmitting || isNavigating}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="House / Apartment number, Street, Sector or Phase"
-                  className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none"
+                  className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none disabled:opacity-60"
                 />
                 {errors.address && <p className="mt-1 text-xs text-red-600">{errors.address}</p>}
               </div>
@@ -321,10 +404,11 @@ export function CheckoutForm() {
                     id="city"
                     type="text"
                     required
+                    disabled={isSubmitting || isNavigating}
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="Lahore, Karachi, Islamabad..."
-                    className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none"
+                    className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none disabled:opacity-60"
                   />
                   {errors.city && <p className="mt-1 text-xs text-red-600">{errors.city}</p>}
                 </div>
@@ -336,10 +420,11 @@ export function CheckoutForm() {
                   <input
                     id="postalCode"
                     type="text"
+                    disabled={isSubmitting || isNavigating}
                     value={postalCode}
                     onChange={(e) => setPostalCode(e.target.value)}
                     placeholder="e.g. 54000"
-                    className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none"
+                    className="w-full border border-line bg-surface px-3 py-2 text-sm text-foreground focus:border-foreground focus:outline-none disabled:opacity-60"
                   />
                 </div>
               </div>
@@ -355,18 +440,15 @@ export function CheckoutForm() {
             </div>
 
             <div className="space-y-3">
-              {/* Option 1: Cash on Delivery */}
-              <label
-                className={`flex cursor-pointer items-start gap-4 border p-4 transition-colors ${
-                  paymentMethod === "COD" ? "border-foreground bg-surface" : "border-line"
-                }`}
-              >
+              {/* Cash on Delivery */}
+              <label className="flex cursor-pointer items-start gap-4 border border-foreground bg-surface p-4 transition-colors">
                 <input
                   type="radio"
                   name="paymentMethod"
                   value="COD"
                   checked={paymentMethod === "COD"}
                   onChange={() => setPaymentMethod("COD")}
+                  disabled={isSubmitting || isNavigating}
                   className="mt-1 accent-foreground"
                 />
                 <div className="flex-1">
@@ -376,29 +458,6 @@ export function CheckoutForm() {
                   </div>
                   <p className="mt-1 text-xs text-muted">
                     Pay with cash when your parcel is delivered to your doorstep. Standard shipping across Pakistan.
-                  </p>
-                </div>
-              </label>
-
-              {/* Option 2: JazzCash (Disabled placeholder for Phase 5) */}
-              <label className="flex cursor-not-allowed items-start gap-4 border border-line bg-background/50 p-4 opacity-60">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="JAZZCASH"
-                  disabled
-                  checked={paymentMethod === "JAZZCASH"}
-                  className="mt-1"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted">JazzCash Online Payment</span>
-                    <span className="rounded bg-line px-1.5 py-0.5 text-[0.65rem] tracking-wider text-muted uppercase">
-                      Coming in Phase 5
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted">
-                    Pay with JazzCash Mobile Account or Debit/Credit card. (Disabled until merchant approval).
                   </p>
                 </div>
               </label>
@@ -416,20 +475,34 @@ export function CheckoutForm() {
 
           {/* Item List */}
           <ul className="divide-y divide-line max-h-72 overflow-y-auto pr-1">
-            {rawItems.map((item) => (
-              <li key={item.variantId} className="flex justify-between py-3 text-xs">
-                <div className="space-y-0.5 pr-2">
-                  <p className="font-medium text-foreground">{item.name}</p>
-                  <p className="text-[0.68rem] tracking-wider text-muted uppercase">
-                    {item.finish} {item.colour !== "None / Single" ? `· ${item.colour}` : ""}{" "}
-                    {item.size ? `· Size ${item.size}` : ""} &times; {item.quantity}
-                  </p>
-                </div>
-                <div className="shrink-0 tabular-nums text-foreground">
-                  {formatRs(item.priceAtAdd * item.quantity)}
-                </div>
-              </li>
-            ))}
+            {rawItems.map((item) => {
+              const line = linesByVariant.get(item.variantId);
+              const isLineSoldOut = line?.problem === "OUT_OF_STOCK" || line?.problem === "UNAVAILABLE";
+
+              return (
+                <li key={item.variantId} className="flex justify-between py-3 text-xs">
+                  <div className="space-y-0.5 pr-2">
+                    <div className="flex items-center gap-2">
+                      <p className={`font-medium ${isLineSoldOut ? "line-through text-muted" : "text-foreground"}`}>
+                        {item.name}
+                      </p>
+                      {isLineSoldOut && (
+                        <span className="bg-neutral-900 text-white text-[0.6rem] tracking-wider uppercase px-1.5 py-0.5 font-medium">
+                          Sold Out
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[0.68rem] tracking-wider text-muted uppercase">
+                      {item.finish} {item.colour !== "None / Single" ? `· ${item.colour}` : ""}{" "}
+                      {item.size ? `· Size ${item.size}` : ""} &times; {item.quantity}
+                    </p>
+                  </div>
+                  <div className={`shrink-0 tabular-nums ${isLineSoldOut ? "line-through text-muted" : "text-foreground"}`}>
+                    {formatRs(item.priceAtAdd * item.quantity)}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
 
           {/* Pricing Totals */}
@@ -455,10 +528,22 @@ export function CheckoutForm() {
           {/* Place Order CTA Button */}
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full btn btn-add text-center disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isSubmitting || hasSoldOut || isNavigating}
+            className="w-full btn btn-add text-center disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isSubmitting ? "Placing your order…" : `Confirm Order · ${formatRs(total)}`}
+            {(isSubmitting || isNavigating) && (
+              <svg className="size-4 animate-spin text-current" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+            )}
+            {isNavigating
+              ? "Opening confirmation…"
+              : isSubmitting
+                ? "Placing your order…"
+                : hasSoldOut
+                  ? "Items Sold Out — Update Bag"
+                  : `Confirm Order · ${formatRs(total)}`}
           </button>
 
           <p className="text-[0.65rem] text-center text-muted tracking-wider uppercase">

@@ -3,10 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { formatRs } from "@/lib/format";
+import { getAdmin } from "@/server/auth/admin-session";
+import { verifyOrderToken } from "@/server/orders/order-token";
 import { toPublicOrder } from "@/server/orders/public-order";
+import { ClearCartOnMount } from "./clear-cart";
 
 export const metadata: Metadata = {
-  title: "Order Confirmation — Aurele",
+  title: "Order Confirmation — Aurelé",
   description: "Thank you for your order.",
   robots: {
     index: false,
@@ -18,10 +21,25 @@ interface OrderPageProps {
   params: Promise<{
     orderNumber: string;
   }>;
+  searchParams: Promise<{
+    token?: string;
+  }>;
 }
 
-export default async function OrderConfirmationPage({ params }: OrderPageProps) {
+export default async function OrderConfirmationPage({ params, searchParams }: OrderPageProps) {
   const { orderNumber } = await params;
+  const { token } = await searchParams;
+
+  // Security check: Order numbers are sequential. Protect customer PII against
+  // sequential guessing attacks (IDOR) with an unguessable cryptographic token.
+  const isAuthorizedToken = verifyOrderToken(orderNumber, token);
+
+  if (!isAuthorizedToken) {
+    const admin = await getAdmin();
+    if (!admin) {
+      notFound();
+    }
+  }
 
   const rawOrder = await db.order.findUnique({
     where: { orderNumber },
@@ -41,6 +59,8 @@ export default async function OrderConfirmationPage({ params }: OrderPageProps) 
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-8">
+      {/* Clears cart in background after successful confirmation navigation */}
+      <ClearCartOnMount />
       {/* Top Banner */}
       <div className="border border-line bg-surface p-8 text-center space-y-3">
         <div className="inline-flex size-10 items-center justify-center rounded-full bg-foreground text-background text-sm">

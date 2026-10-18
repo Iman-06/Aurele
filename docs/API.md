@@ -127,18 +127,67 @@ this replaces the `ANNOUNCEMENT`, `INSTAGRAM_URL`, `ABOUT_BLURB` constants in `s
 
 ## Checkout (Track 3)
 
-### `POST /api/orders` — place an order
-`placeOrder()` in `src/server/orders/orders.ts`
+### `POST /api/checkout` — submit checkout (pluggable payment provider)
+Delegates to the active `PaymentProvider` (`src/server/payments/registry.ts`).
 
 ```json
 {
   "items": [{ "variantId": 12, "quantity": 1 }],
-  "customer": { "name": "Sara Ahmed", "email": "sara@example.com", "phone": "0321 1234567",
-                "address": "12 Mall Road", "city": "Lahore", "postalCode": "54000" },
+  "customer": {
+    "name": "Sara Ahmed",
+    "email": "sara@example.com",
+    "phone": "0321 1234567",
+    "address": "12 Mall Road",
+    "city": "Lahore",
+    "postalCode": "54000"
+  },
   "paymentMethod": "COD"
 }
 ```
-→ `201` with the order (no internal ids): `orderNumber`, `status`, `paymentMethod`, `paymentStatus`, `customer`, `items[] {name,label,finish,colour,size,quantity,unitPrice,lineTotal}`, `subtotal`, `shippingFee`, `total`.
+
+→ `201 Created` with the public order and next action:
+
+```json
+{
+  "order": {
+    "orderNumber": "10001",
+    "token": "4a7f23c91d84b5e28a903c7e411b9821",
+    "status": "NEW",
+    "paymentMethod": "COD",
+    "paymentStatus": "UNPAID",
+    "customer": {
+      "name": "Sara Ahmed",
+      "email": "sara@example.com",
+      "phone": "0321 1234567",
+      "address": "12 Mall Road",
+      "city": "Lahore",
+      "postalCode": "54000"
+    },
+    "items": [{
+      "name": "Aveline Pearl Drop",
+      "label": "Gold, Blue",
+      "finish": "GOLD",
+      "colour": "Blue",
+      "size": "",
+      "quantity": 1,
+      "unitPrice": 2500,
+      "lineTotal": 2500
+    }],
+    "delivery": null,
+    "subtotal": 2500,
+    "shippingFee": 250,
+    "total": 2750,
+    "createdAt": "2026-10-18T10:00:00.000Z"
+  },
+  "next": { "type": "CONFIRMATION" }
+}
+```
+
+- **Security Token (`order.token`)**: Order numbers are sequential. The API includes an unguessable cryptographic `token` derived from server secrets. The customer is redirected to `/order/[orderNumber]?token=[token]`. Accessing `/order/[orderNumber]` without the valid matching token returns a 404 to protect customer PII against enumeration.
+- **COD Orders**: Triggers order confirmation email via Resend in the background, allocates stock immediately with row locks, and returns `next: { type: "CONFIRMATION" }`.
+
+### `POST /api/orders` — raw order creation (Track 2)
+Directly calls `placeOrder()` in `src/server/orders/orders.ts`. Same body as above; returns `toPublicOrder(order)`.
 
 Once the owner marks it shipped, the order also has `delivery: { method: "OWN" | "COURIER", courier, trackingNumber, shippedAt }` (`null` before shipping; `trackingNumber` may be `null` — own delivery never has one). Use it in the "your order is on its way" email.
 
@@ -149,8 +198,6 @@ Once the owner marks it shipped, the order also has `delivery: { method: "OWN" |
 - At most **20 of one item** per order (repeated lines are added together).
 - Signed-in customers: link the order on the server with `placeOrder(db, input, { customerId })` from your session — a `customerId` in the request body is ignored.
 - Request bodies over 64 KB are rejected.
-
-⚠️ Order numbers are sequential — **never** build a public "look up order by number" page without a secret token.
 
 ### JazzCash return / IPN handler (you build the route)
 After verifying JazzCash's secure hash, for a **successful** payment call:

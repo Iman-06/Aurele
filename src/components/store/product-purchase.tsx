@@ -49,23 +49,24 @@ function OptionBox({
       type="button"
       disabled={soldOut}
       aria-pressed={selected}
+      aria-disabled={soldOut}
       title={soldOut ? "Sold out" : undefined}
       onClick={onSelect}
       className={`relative inline-flex min-h-11 min-w-11 items-center justify-center border px-3 text-[0.7rem] tracking-[0.14em] uppercase ${
         soldOut
-          ? "cursor-not-allowed border-[#d4d4d4] text-[#a3a3a3]"
+          ? "cursor-not-allowed border-[#e0e0e0] bg-[#f9f9f9] text-[#999999]"
           : selected
-            ? "border-black text-black"
+            ? "border-black text-black bg-white"
             : "border-[#d4d4d4] text-black hover:border-black"
       }`}
     >
       {soldOut && (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top_right,transparent_calc(50%-0.5px),#bdbdbd_50%,transparent_calc(50%+0.5px))]"
+          className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top_right,transparent_calc(50%-0.5px),#999999_50%,transparent_calc(50%+0.5px))]"
         />
       )}
-      <span className="relative">{label}</span>
+      <span className={`relative ${soldOut ? "line-through opacity-70" : ""}`}>{label}</span>
     </button>
   );
 }

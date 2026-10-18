@@ -32,10 +32,17 @@ async function callResend(apiKey: string, payload: ResendPayload): Promise<{ id:
 /**
  * Sends customer order confirmation and store owner notification emails via Resend.
  *
- * Designed to NEVER break order creation:
- * - Missing API key is logged as a warning.
- * - Network or provider errors are logged and recorded to OrderEvent (timeline).
- * - The function never rejects or throws to the checkout caller.
+ * Requirements:
+ * - RESEND_API_KEY: Secret key created in Resend dashboard.
+ * - EMAIL_FROM: Must use a domain verified in Resend (e.g. orders@yourdomain.com).
+ *   NOTE: Free public webmail domains (like @gmail.com or @yahoo.com) CANNOT be used
+ *   as sending domains on Resend. For initial testing prior to DNS verification,
+ *   set EMAIL_FROM="Aurelé <onboarding@resend.dev>" and deliver to your registered email.
+ * - ORDER_NOTIFICATION_EMAIL: Store owner's inbox address.
+ *
+ * Resilience:
+ * - Missing API key is logged as a warning; never crashes checkout.
+ * - Delivery failures are logged and persisted as an order timeline NOTE for owner visibility.
  */
 export async function sendOrderCreatedEmails(order: OrderWithItems, db?: PrismaClient): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -47,6 +54,17 @@ export async function sendOrderCreatedEmails(order: OrderWithItems, db?: PrismaC
       `[email] RESEND_API_KEY is not configured. Email skipped for order #${order.orderNumber}.`,
     );
     return;
+  }
+
+  // Check for common misconfigurations with unverified sending domains
+  const fromDomain = fromEmail.split("@")[1]?.replace(">", "").trim().toLowerCase();
+  const isPublicWebmail = fromDomain && ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com"].includes(fromDomain);
+
+  if (isPublicWebmail) {
+    console.warn(
+      `[email] Warning: EMAIL_FROM is configured with a public webmail provider (@${fromDomain}). ` +
+      `Resend will reject unverified domains. Configure a verified domain in Resend or use 'onboarding@resend.dev' for sandbox testing.`
+    );
   }
 
   // 1. Send confirmation email to customer

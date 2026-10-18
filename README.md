@@ -37,33 +37,39 @@ Website for **Aurelé**, a contemporary jewellery brand in Pakistan — one Next
 
 ## Setup (new machine)
 
-Requirements: **Node.js 22+**, Git, and a **local PostgreSQL 16+** for the automated tests.
-The site itself uses the team's **shared Neon database**.
+Requirements: **Node.js 20+ or 22+**, and Git.
+The site uses **Neon (serverless PostgreSQL)** — there is no need to install or run a local PostgreSQL instance to run the application locally.
 
 ```bash
 git clone https://github.com/Iman-06/Lunara.git
 cd Lunara
 npm install
-cp .env.example .env   # fill in DATABASE_URL (Neon pooled), DIRECT_URL (Neon direct), TEST_DATABASE_URL, AUTH_SECRET, CRON_SECRET
+cp .env.example .env.local   # or .env — fill in your Neon connection strings and keys
 ```
 
-Create one empty **local** database for the tests (e.g. `lunara_test`). Its name must end in `_test`:
-the tests wipe it, and refuse to run against anything that isn't a local `*_test` database. Then:
+### Environment Variables (.env.local)
+- **DATABASE_URL**: Neon pooled connection string (host has `-pooler`). Used by Next.js at runtime.
+- **DIRECT_URL**: Neon direct unpooled connection string. Used for Prisma migrations.
+- **AUTH_SECRET**: Secret for admin session cookies and secure order confirmation tokens.
+- **RESEND_API_KEY**: Transactional email API key from [resend.com](https://resend.com).
+- **EMAIL_FROM**: Verified sender domain (e.g. `Aurelé <orders@aurele.pk>` or `onboarding@resend.dev` in dev).
+- **CLOUDINARY_CLOUD_NAME**, **CLOUDINARY_API_KEY**, **CLOUDINARY_API_SECRET**: Cloudinary credentials for product photos.
+
+Then generate the Prisma client and launch:
 
 ```bash
-npx prisma generate    # generate the database client
-npm run admin:create   # create your admin login on the shared DB (asks for email + password)
-npm run dev            # http://localhost:3000  — admin at /admin
+npx prisma generate    # generates the database client to src/generated/prisma
+npm run dev            # starts dev server at http://localhost:3000
 ```
 
-**Shared database rules.** Neon already has the tables and the inventory — don't run `npm run setup`
-or `npm run db:seed` against it. Schema changes are agreed by the team first, then:
-1. create the migration against a throwaway **local** database, e.g.
-   `DIRECT_URL="postgresql://postgres:…@localhost:5432/aurele_dev" npm run db:migrate -- --name <change>`
-2. commit it, and apply it to Neon with `npm run db:deploy`. Never run `db:migrate` against Neon — it can reset the database.
+To create an admin account on the database:
+```bash
+npm run admin:create   # interactive email + password prompt
+```
 
-Generate secrets with `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`.
-**Windows PowerShell:** if `npm` is blocked ("running scripts is disabled"), use `npm.cmd` instead.
+**Neon Database Rules:** Neon already contains the schema and seeded catalog. Do not run `prisma migrate reset` or `db:seed` against the shared database. Apply new migrations with `npx prisma migrate deploy` (`npm run db:deploy`).
+
+**Windows PowerShell:** if `npm` is blocked by PowerShell execution policy, use `npm.cmd` instead (e.g. `npm.cmd run dev`).
 
 ## Everyday commands
 

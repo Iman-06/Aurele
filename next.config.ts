@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+    ],
+  },
   // Phone on the same Wi-Fi loads the dev server by this LAN address. Without it, Next blocks the dev JS.
   allowedDevOrigins: ["10.251.114.4"],
   experimental: {
