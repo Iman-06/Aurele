@@ -10,7 +10,7 @@ An item appears on the website only when **(1)** its design is *Visible*, **(2)*
 
 - **Products → open a design → Price by finish:** one price for every colour and size of Gold (or Silver) at once. Change a single row's price underneath if one colour costs more.
 - **Add a finish / colour / size** at the bottom of a design. New colours copy their finish's price.
-- **Photos:** tag each photo with its finish + colour so the right one shows when a customer picks it. Untagged photos are general. JPG/PNG/WebP, up to 5 MB.
+- **Photos:** tag each photo with its finish + colour so the right one shows when a customer picks it. Untagged photos are general. JPG/PNG/WebP, up to 5 MB. **The first photo (far left) is the cover** shown on the shop pages — move another one to the front with ← to change it.
 - **Hide from website** keeps the design and its history but takes it off the shop. Untick *Visible* on a single row to mark just that colour/size sold out.
 - **New Arrival** puts a design in the website's New Arrivals section.
 - Designs/rows can only be **deleted if never sold** — otherwise hide them.

@@ -1,5 +1,6 @@
 import { ZodError } from "zod";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { moveImage } from "@/server/admin/products";
 import { getProductDetail, listProducts, validateCart } from "@/server/catalog/catalog";
 import { DomainError } from "@/server/errors";
 import { subscribe } from "@/server/marketing/subscribers";
@@ -250,6 +251,31 @@ describe("product list", () => {
 
     expect((await detail(u.slug)).isOneOfAKind).toBe(true);
     expect((await detail(all.items.find((c) => !c.isOneOfAKind)!.slug)).isOneOfAKind).toBe(false);
+  });
+
+  it("the card shows the owner's first photo (cover), and moving photos changes it", async () => {
+    const p = await createDesign({
+      name: "Cover Test",
+      variants: [
+        { finish: "GOLD", colour: "Blue", qty: 3 },
+        { finish: "GOLD", colour: "Red", qty: 3 },
+      ],
+      images: [
+        { url: "/img/general.jpg" }, // first in the owner's order
+        { finish: "GOLD", colour: "Blue", url: "/img/gold-blue.jpg" },
+      ],
+    });
+    const cover = async () => (await listProducts(db, { q: "cover test" })).items[0].image?.url;
+    expect(await cover()).toBe("/img/general.jpg"); // not the Gold · Blue photo of the first option
+    expect((await listProducts(db, { q: "cover test", colour: "Blue" })).items[0].image?.url).toBe("/img/general.jpg"); // filters don't change it
+
+    const [general, blue] = await db.productImage.findMany({ where: { productId: p.id }, orderBy: { id: "asc" } });
+    await moveImage(db, blue.id, "up"); // owner moves Gold · Blue to the front
+    expect(await cover()).toBe("/img/gold-blue.jpg");
+    expect(general.url).toBe("/img/general.jpg");
+
+    const bare = await createDesign({ name: "No Photo Yet", variants: [{ finish: "GOLD", qty: 1 }] });
+    expect((await listProducts(db, { q: "no photo yet" })).items[0]).toMatchObject({ slug: bare.slug, image: null });
   });
 
   it("pages results", async () => {

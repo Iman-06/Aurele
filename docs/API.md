@@ -41,6 +41,7 @@ Query (all optional): `category` (`earrings` · `rings` · `bracelets` · `neckl
 }
 ```
 Sold-out designs are included (`inStock: false`, sorted last) — show "Out of Stock". Use `?inStock=true` to hide them.
+`image` is the design's **cover photo** — the first photo in the owner's order in the admin (filters don't change it); `null` when it has no photos yet.
 `hasMultipleOptions: true` → the design has more than one finish, colour or ring size: show **Choose** (link to the product page). `false` → a single option, so **Add** can put it straight in the cart. Sold-out options count too (the product page shows them greyed out); options without a price or switched off by the owner don't. List filters don't change it.
 
 ### `GET /api/products/{slug}` — product page

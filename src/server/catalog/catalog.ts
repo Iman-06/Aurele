@@ -114,7 +114,7 @@ export type ProductCard = {
   // false → a single option, so the card can add it straight to the cart ("Add").
   // Counts priced, switched-on options; ignores the list filters.
   hasMultipleOptions: boolean;
-  image: Image | null;
+  image: Image | null; // cover photo: the first photo in the owner's order (admin ← →), whatever the filters
 };
 
 export type ProductList = { items: ProductCard[]; total: number; page: number; pageSize: number; totalPages: number };
@@ -154,7 +154,6 @@ export async function listProducts(db: PrismaClient, query: ListProductsQuery = 
     if (q.minPrice !== undefined && priceTo < q.minPrice) continue;
     if (q.maxPrice !== undefined && priceFrom > q.maxPrice) continue;
 
-    const first = available[0] ?? matching[0];
     cards.push({
       id: p.id,
       slug: p.slug,
@@ -168,7 +167,8 @@ export async function listProducts(db: PrismaClient, query: ListProductsQuery = 
       colours: [...new Set(p.variants.map((v) => v.colour).filter((c) => c !== NO_COLOUR))].sort((a, b) => colourOrder(a) - colourOrder(b)),
       inStock: available.length > 0,
       hasMultipleOptions: p.variants.length > 1,
-      image: imagesFor(p, first.finish, first.colour)[0] ?? null,
+      // The owner's cover photo: whichever photo is first in the admin (moved with ← →).
+      image: p.images[0] ? toImage(p.images[0], p.name) : null,
     });
   }
 
