@@ -127,7 +127,21 @@ export function CartView() {
               <div className="flex flex-1 flex-col gap-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
                   <div>
-                    <p className="text-sm">{line?.name ?? item.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className={`text-sm ${line?.problem === "OUT_OF_STOCK" || line?.problem === "UNAVAILABLE" ? "line-through text-muted" : ""}`}>
+                        {line?.name ?? item.name}
+                      </p>
+                      {line?.problem === "OUT_OF_STOCK" && (
+                        <span className="inline-block bg-neutral-900 text-white text-[0.65rem] tracking-[0.14em] uppercase px-2 py-0.5 font-medium">
+                          Sold Out
+                        </span>
+                      )}
+                      {line?.problem === "UNAVAILABLE" && (
+                        <span className="inline-block bg-neutral-800 text-white text-[0.65rem] tracking-[0.14em] uppercase px-2 py-0.5 font-medium">
+                          Unavailable
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-1 text-[0.7rem] tracking-[0.16em] text-muted uppercase">{describe(item)}</p>
                   </div>
                   <p className="text-sm tabular-nums">{formatRs(unitPrice)}</p>
@@ -136,7 +150,11 @@ export function CartView() {
                 {line?.stock.status === "LOW_STOCK" && (
                   <p className="text-[0.7rem] tracking-[0.16em] text-gold uppercase">Only {line.stock.left} left</p>
                 )}
-                {line?.problem && <p className="text-xs text-gold">{PROBLEM_MESSAGES[line.problem]}</p>}
+                {line?.problem && (
+                  <p className="text-xs font-medium text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 w-fit rounded-xs">
+                    {PROBLEM_MESSAGES[line.problem]}
+                  </p>
+                )}
                 {line?.priceChanged && (
                   <p className="text-xs text-gold">The price of this item changed — the amount above is current.</p>
                 )}

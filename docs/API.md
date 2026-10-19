@@ -135,8 +135,14 @@ this replaces the `ANNOUNCEMENT`, `INSTAGRAM_URL`, `ABOUT_BLURB` constants in `s
 ```json
 {
   "items": [{ "variantId": 12, "quantity": 1 }],
-  "customer": { "name": "Sara Ahmed", "email": "sara@example.com", "phone": "0321 1234567",
-                "address": "12 Mall Road", "city": "Lahore", "postalCode": "54000" },
+  "customer": {
+    "name": "Sara Ahmed",
+    "email": "sara@example.com",
+    "phone": "0321 1234567",
+    "address": "12 Mall Road",
+    "city": "Lahore",
+    "postalCode": "54000"
+  },
   "paymentMethod": "COD"
 }
 ```
@@ -147,6 +153,7 @@ this replaces the `ANNOUNCEMENT`, `INSTAGRAM_URL`, `ABOUT_BLURB` constants in `s
 {
   "order": {
     "orderNumber": "10001",
+    "token": "4a7f23c91d84b5e28a903c7e411b9821",
     "status": "NEW",
     "paymentMethod": "COD",
     "paymentStatus": "UNPAID",
@@ -161,13 +168,17 @@ this replaces the `ANNOUNCEMENT`, `INSTAGRAM_URL`, `ABOUT_BLURB` constants in `s
   "next": { "type": "CONFIRMATION" }
 }
 ```
-- `next.type === "CONFIRMATION"` → clear the cart and show the confirmation page. (Later, JazzCash will answer
+- `next.type === "CONFIRMATION"` → clear the cart and go to **`/order/{orderNumber}?token={token}`**. (Later, JazzCash will answer
   `{ "type": "REDIRECT", "url": "…", "formFields": { … } }` → send the customer to the payment page.)
 - **COD** (the only method switched on now): `status: "NEW"`, stock is taken immediately. The customer's confirmation
   email and the owner's new-order email are sent in the background (Resend; a failed email never fails the order).
 - **JAZZCASH**: not available yet → `400 INVALID_INPUT` "JazzCash is not available yet. Please choose Cash on Delivery."
 - Once the owner marks the order shipped, `delivery` becomes `{ "method": "OWN" | "COURIER", "courier", "trackingNumber", "shippedAt" }`
   (`trackingNumber` may be `null` — own delivery never has one).
+
+- **`order.token`** — order numbers are sequential, so the confirmation page `/order/{orderNumber}` only shows the
+  order with the matching `?token=` (an HMAC of the order number signed with `AUTH_SECRET`, `src/server/orders/order-token.ts`);
+  without it → 404. Changing `AUTH_SECRET` makes old confirmation links stop working.
 
 Errors (same body format as above):
 - `400 INVALID_INPUT` — a form field is wrong; `message` says which, `details` has the field issues.
@@ -184,7 +195,7 @@ Same body and errors as `/api/checkout`, but returns the bare order object (the 
 sends **no** emails. Kept for scripts and tests — **the storefront should use `/api/checkout`**.
 
 ⚠️ Order numbers are sequential (10001, 10002, …) — anyone can guess them. Never show an order's customer details on a
-page that only needs the order number; use a secret token or show only non-personal details.
+page that only checks the order number — require the order `token` (see above).
 
 ### JazzCash return / IPN handler (Phase 5 — not live yet)
 `/api/payments/jazzcash/return` and `/api/payments/jazzcash/ipn` exist as placeholders and answer `501` until the

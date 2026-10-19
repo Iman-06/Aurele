@@ -1,13 +1,16 @@
 import type { OrderWithItems } from "./orders";
 import { variantLabel } from "../inventory/stock";
+import { generateOrderToken } from "./order-token";
 
 // What the customer-facing API returns for an order: no internal ids, cost prices or
 // stock bookkeeping — just what the confirmation page / email needs.
+// Includes a secure, unguessable token for viewing the confirmation page.
 
 export function toPublicOrder(o: OrderWithItems) {
   const n = (d: { toString(): string }) => Number(d.toString());
   return {
     orderNumber: o.orderNumber,
+    token: generateOrderToken(o.orderNumber),
     status: o.status,
     paymentMethod: o.paymentMethod,
     paymentStatus: o.paymentStatus,

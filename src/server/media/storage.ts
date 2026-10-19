@@ -84,7 +84,11 @@ export function cloudinaryConfig(): CloudinaryConfig | null {
   const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim();
   const apiKey = process.env.CLOUDINARY_API_KEY?.trim();
   const apiSecret = process.env.CLOUDINARY_API_SECRET?.trim();
-  return cloudName && apiKey && apiSecret ? { cloudName, apiKey, apiSecret } : null;
+  if (cloudName && apiKey && apiSecret) return { cloudName, apiKey, apiSecret };
+
+  // Cloudinary's single-variable form: CLOUDINARY_URL=cloudinary://<api_key>:<api_secret>@<cloud_name>
+  const m = /^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/.exec(process.env.CLOUDINARY_URL?.trim() ?? "");
+  return m ? { apiKey: m[1], apiSecret: m[2], cloudName: m[3] } : null;
 }
 
 const CLOUD_ROOT = "aurele";

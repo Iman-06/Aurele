@@ -44,7 +44,7 @@ You need **Node.js 22+** and Git. **No database install is needed to run the sit
 git clone https://github.com/Iman-06/Aurele.git
 cd Aurele
 npm install
-cp .env.example .env    # then fill it in — ask a teammate for the values (never commit .env)
+cp .env.example .env    # (or .env.local) then fill it in — ask a teammate for the values (never commit .env)
 npx prisma generate     # generate the database client
 npm run dev             # http://localhost:3000 — admin at /admin
 ```
@@ -55,7 +55,7 @@ What goes in `.env` (see `.env.example` for the format):
 |---|---|---|
 | `DATABASE_URL` | Neon **pooled** connection string (host contains `-pooler`) | everything |
 | `DIRECT_URL` | Neon **direct** connection string (no `-pooler`) | applying migrations |
-| `AUTH_SECRET` | long random string — signs the admin login cookie | admin |
+| `AUTH_SECRET` | long random string — signs the admin login cookie and the order-confirmation links | admin, checkout |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | the shop's Cloudinary account (Settings → API Keys) | photo uploads. Without them, uploads are saved on your laptop only (`storage/uploads`) |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `ORDER_NOTIFICATION_EMAIL` | order emails (Resend) | checkout emails |
 | `CRON_SECRET` | long random string for `/api/cron/*` | hosting |

@@ -12,3 +12,4 @@ process.env.CRON_SECRET ??= "test-cron-secret-value";
 delete process.env.CLOUDINARY_CLOUD_NAME;
 delete process.env.CLOUDINARY_API_KEY;
 delete process.env.CLOUDINARY_API_SECRET;
+delete process.env.CLOUDINARY_URL;
