@@ -12,9 +12,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.aurele.pk";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Aurelé",
   description: "Aurelé fine jewelry. Aurele.",
+  openGraph: {
+    title: "Aurelé",
+    description: "Quiet pieces, made to be worn every day.",
+    siteName: "Aurelé",
+    type: "website",
+    images: [{ url: "/tiles/elegance-earrings.jpg", alt: "Aurelé" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Aurelé",
+    description: "Quiet pieces, made to be worn every day.",
+    images: ["/tiles/elegance-earrings.jpg"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

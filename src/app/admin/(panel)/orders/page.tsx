@@ -59,7 +59,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin/ord
             aria-current={query.tab === tab ? "page" : undefined}
             className={`inline-flex min-h-11 items-center border-b-2 px-3 ${query.tab === tab ? "border-stone-900 font-medium text-stone-900" : "border-transparent text-stone-500 hover:text-stone-800"}`}
           >
-            {label} <span className="text-xs text-stone-400">{data.counts[tab]}</span>
+            {label}
           </Link>
         ))}
       </nav>

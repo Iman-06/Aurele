@@ -20,13 +20,16 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [home, arrivals, oneOfAKind] = await Promise.all([
+  const [home, arrivals, oneOfAKind, categoryCounts] = await Promise.all([
     getHomeContent(db),
     listProducts(db, { sort: "newest", pageSize: 12 }),
     listProducts(db, { oneOfAKind: true, pageSize: 2 }),
+    Promise.all(ELEGANCE_TILES.map((tile) => listProducts(db, { category: tile.category, pageSize: 1 }))),
   ]);
   const { banner, promotion } = home;
-  const tiles = ELEGANCE_TILES.map((tile) => ({ ...tile, src: publicImage(tile.image) }));
+  const tiles = ELEGANCE_TILES.flatMap((tile, index) =>
+    categoryCounts[index].total > 0 ? [{ ...tile, src: publicImage(tile.image) }] : [],
+  );
 
   return (
     <div>
@@ -92,9 +95,8 @@ export default async function HomePage() {
         </ul>
       </section>
 
-      <section className="relative bg-[#1c1c1c] bg-cover bg-center text-white" style={{ backgroundImage: "url(/newsletter-bg.jpg)" }}>
-        <div className="absolute inset-0 bg-black/40" aria-hidden="true" />
-        <div className="relative mx-auto flex min-h-[28rem] max-w-2xl flex-col items-center justify-center px-6 py-20 text-center">
+      <section className="bg-black text-white">
+        <div className="mx-auto flex min-h-[28rem] max-w-2xl flex-col items-center justify-center px-6 py-20 text-center">
           <Wordmark variant="light" crop="lockup" className="mb-8 h-40" />
           <h2 className="font-display text-3xl font-normal tracking-[0.06em] uppercase">Newsletter</h2>
           <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/90">

@@ -8,6 +8,7 @@ Website for **Aurelé**, a contemporary jewellery brand in Pakistan — one Next
 | [docs/API.md](docs/API.md) | Tracks 1 & 3: every endpoint/function the storefront and checkout use |
 | [docs/ADMIN-GUIDE.md](docs/ADMIN-GUIDE.md) | the shop owner: how to use the admin panel |
 | [docs/LAUNCH-CHECKLIST.md](docs/LAUNCH-CHECKLIST.md) | everything to do before going live |
+| [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) | owner overview, then the developer map |
 | `docs/Business Requirements Document.docx` | what the business asked for |
 
 ## Who builds what
