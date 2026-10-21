@@ -1,58 +1,134 @@
 # Aurelé admin — owner's guide
 
-Sign in at **`/admin`** (e.g. `https://yourdomain.pk/admin`). Five wrong passwords lock the login for 15 minutes. To change your password, use **Settings → Change password**. Forgot it completely? A developer runs `npm run admin:create` with your email to set a new one (this signs you out on every device).
+Sign in at `/admin`. Use your email and password.
 
-## Dashboard
-The home page shows what needs attention (refunds, new orders, out-of-stock and low-stock items, items without a price, designs without photos) — click any box to go straight there. Below: sales, orders, average order, **gross profit** (sales minus the cost price at the time of sale), a daily sales chart, best sellers and the latest orders for the last 7 / 30 / 90 days. Cancelled and unpaid orders never count as sales.
+Five wrong passwords lock that login for 15 minutes.
 
-## Getting products online
-An item appears on the website only when **(1)** its design is *Visible*, **(2)** the item has a **selling price**, and **(3)** it is in stock.
+## Your login
 
-- **Products → open a design → Price by finish:** one price for every colour and size of Gold (or Silver) at once. Change a single row's price underneath if one colour costs more.
-- **Add a finish / colour / size** at the bottom of a design. New colours copy their finish's price.
-- **Photos:** always upload through this admin, not through cloudinary.com. The admin sends the file to Cloudinary and attaches it to the design. Open the design, then **Photos**: choose a JPG, PNG, or WebP up to 5 MB, set **Finish** (Gold, Silver, or Any) and **Colour** (or Any), add an optional description, and click **Upload photo**. The arrows reorder the photos. The first photo is the one on the product card. **Delete** removes it from the product and from Cloudinary. Use square photos around 1200×1200; they are resized automatically. Everything you upload goes to the shared database and shows on the real website, so upload real photos only. The dashboard box **designs without photos** links to whatever is still missing.
-- **Hide from website** keeps the design and its history but takes it off the shop. Untick *Visible* on a single row to mark just that colour/size sold out.
-- **New Arrival** puts a design in the website's New Arrivals section.
-- Designs/rows can only be **deleted if never sold** — otherwise hide them.
+More than one person can have an admin login. Every login can do every job. There is no separate owner account and staff account.
 
-## Stock
-**Inventory** lists every item. Filters: out of stock, low stock, hidden, no price.
-- **+ Received** — a delivery arrived: type how many and press the button (adds on top).
-- **Set** — after a physical count, type the exact number. If a sale happened while you were typing, it refuses and shows the real number — check and try again.
-- **History** — every change: sales, cancellations, your edits, imports.
-- **Export to Excel** — the whole inventory in the same layout as the original workbook.
-- **Import from Excel** — upload the workbook, read the preview, then press Apply. Once orders exist, quantities from the sheet are **not** applied unless you tick the box (the website already counted those sales).
+To change your password, open **Settings → Change password**. Type your current password, then the new one twice. The new password needs at least 10 characters, with letters and numbers. You stay signed in on this device. Every other device is signed out.
 
-Website sales and cancellations update stock automatically — you never need to subtract sold items yourself.
+**Sign out everywhere** is on the same page. Use it if a phone is lost.
 
-## Orders
-**Orders → Needs action** shows new orders to pack and anything waiting for a refund.
-1. **Start packing** → *Processing*.
-2. **Mark as shipped** — choose *Our own delivery* (optional rider name/phone) or a *Courier* (TCS, Leopards, …) and paste the courier's tracking number if you have it. You can add it later under *Edit delivery details*.
-3. **Delivered** — for COD this also records the cash as collected.
+Forgot the password completely? Ask a developer to run `npm run admin:create` with your email. If that email already has a login, this sets a new password and signs that person out on every device. It does not create a second login for the same email.
 
-- **Cancel** (before shipping) asks for a reason and puts the items back in stock.
-- **JazzCash orders** appear once paid. If a customer paid for something that sold out meanwhile, or you cancel a paid order, it shows **Refund needed** in red: refund in the JazzCash merchant portal, then press **Mark refunded** (add the refund reference).
-- Unpaid JazzCash orders wait under *Awaiting payment* (no stock held) and become *Abandoned* after 24 hours.
-- **Find orders:** search by order number, name, phone, email or tracking number, and pick **From / To** dates (Pakistan time). **Clear filters** shows everything again.
-- **Export to Excel** downloads the orders you're looking at (same tab, search and dates): an *Orders* sheet with one row per order (address, phone, items, totals — handy for courier bookings) and an *Items* sheet with one row per piece (price, cost and profit — for accounts). Cancelled orders are included when the tab shows them; check the *Status* column.
-- Use **Call / WhatsApp / Email** on the order to contact the customer, **notes** for anything the team should know (customers never see them), and **Print packing slip** for the parcel.
+## What customers can see
+
+A piece shows on the website when the design is **Visible** and that colour or size has a **selling price**.
+
+Untick **Visible** on a design to hide the whole design. Untick **Visible** on one row to hide just that colour or size.
+
+No selling price means that row is hidden.
+
+**Sold out is not hidden.** If the quantity is 0, customers still see the piece. It says sold out, and they cannot buy it.
+
+## Photos
+
+Always upload photos in this admin. Do not upload them on cloudinary.com. The admin saves the photo and attaches it to the design.
+
+Open **Products**, open the design, then **Photos**.
+
+1. Choose a JPG, PNG, or WebP. The largest file is 5 MB.
+2. Set **Finish** to Gold, Silver, or Any.
+3. Set **Colour** to the colour, or Any.
+4. Description is optional.
+5. Click **Upload photo**.
+
+There is no limit on how many photos a design can have. Square photos around 1200×1200 work well. The site shrinks large photos.
+
+The arrows put the photos in order. **The first photo is the picture on the product card** in the shop lists. That is true even if the first photo is tagged Gold or Silver. Move the picture you want on the card all the way to the left.
+
+**Delete** removes that photo from the design and from the shop’s photo storage.
+
+Tags only change the product page, not the card.
+
+Example, Aveline Pearl Drop:
+
+- A photo tagged **Gold** and **Blue** shows when the customer picks Gold and Blue.
+- A photo tagged **Gold** and **Any** shows for a Gold colour that has no photo of its own.
+- A photo tagged **Any** and **Any** is a general photo. It shows when nothing more specific matches.
+- If one combination still has no photo, the page uses another photo from the same design.
+- If the design has no photos at all, the page shows a plain placeholder.
+
+The product page can show more than one photo for the choice the customer made. Ring size does not change the photos.
+
+Upload real photos only. They go on the live website.
+
+The dashboard box for designs without photos links to what is still missing.
+
+## Day-to-day stock
+
+**Inventory** lists every item.
+
+- **+ Received** adds a delivery on top of what you already have.
+- **Set** types the exact number after you count. If a sale happens while you are typing, it stops and shows the real number. Check it, then try again.
+- **History** lists sales, cancellations, your edits, and imports. It does not say which person clicked the button.
+
+Sales and cancellations update the numbers for you. Do not subtract a sale by hand.
+
+## Excel
+
+Use Excel rarely after launch. For a new delivery or a count, use **Received** or **Set**.
+
+**Export to Excel** downloads a copy. It does not change the website.
+
+**Import from Excel** is for a big update from a spreadsheet.
+
+1. Choose the file.
+2. Click **Preview changes**. Nothing is saved yet. Read the preview.
+3. Click **Apply** only if the preview is right.
+
+After the shop has orders, import does **not** replace stock numbers unless you tick the box. Leave that box unticked unless the file is a fresh count that already includes every sale.
+
+An old file is dangerous. It can rename designs and change prices. If you tick the stock box, it can also put old quantities back and undo sales. Rows that are on the website but missing from the file are left as they are. Import does not delete them. Import does not add or remove the photos customers see. The Photo Ref column is only a note in the sheet.
+
+Ask a developer before a large import. The preview file is kept on the computer running the site, and a hosted site may not allow that.
+
+## When an order arrives
+
+Open **Orders → Needs action**.
+
+1. **Start packing.** The order becomes Processing.
+2. **Mark as shipped.** Choose your own delivery, or a courier, and add a tracking number if you have one.
+3. **Delivered.** For cash on delivery, this also records that the cash was collected.
+
+**Cancel** before shipping asks for a reason and puts the items back in stock.
+
+The order page shows who changed the status. It uses the email of the person who was signed in.
+
+Use **Call**, **WhatsApp**, or **Email** to reach the customer. **Notes** are for your team. Customers never see them. **Print packing slip** is for the parcel.
+
+Search by order number, name, phone, email, or tracking number. **From** and **To** filter by date. **Export to Excel** downloads the orders you are looking at. That download does not change the orders.
 
 ## Homepage
-**Homepage** controls the website's main banner and promotion strip.
-- **Banner:** upload a wide photo, and optionally a tall photo for phones. Write a heading, subheading and button, then tick *Show the banner on the website*. Untick it to hide the banner without losing it. Upload the banner here too, not on cloudinary.com.
-- **Promotions:** add a headline (e.g. "Eid Sale — 20% off earrings"), an optional extra line and button link, and optional **start/end dates** (Pakistan time). A scheduled promotion appears and disappears by itself — you can set up a sale days in advance. *Live now / Scheduled / Ended / Switched off* shows each one's state. If two are live at once, the newer one shows.
-- Links: start with `/` for a page on the site (e.g. `/category/earrings`) or paste a full `https://` address (e.g. your Instagram).
+
+**Homepage** is the big banner and the thin promotion strip.
+
+Upload the banner here, not on cloudinary.com. Use a wide photo, and a tall photo for phones if you want one. Write the heading, the line under it, and the button. Tick **Show the banner** to put it on the site. Untick it to hide it without deleting it.
+
+A promotion needs a headline. The extra line, button, and dates are optional. It can turn on and off by itself. If two are on at once, the newer one shows.
+
+The category pictures on the home page are not edited here.
 
 ## Mailing list
-**Subscribers** shows everyone who signed up in the website footer. **Export to Excel** to use with an email tool. **Remove** someone who asks to unsubscribe.
 
-## Settings
-Shipping fee (flat, anywhere in Pakistan) and the low-stock limit ("Only N left" shows at or below this number).
+**Subscribers** is everyone who typed an email on the website. **Export to Excel** downloads the list. **Remove** takes someone off it. Signing up does not send them an email.
 
-**Store details:** the announcement bar at the top of the website, your Instagram link, the support email customers see on the policy pages, and the About text in the footer. Changes show on the website straight away. If the announcement, Instagram, or About box is left empty, the website keeps its built-in wording. An empty support email hides the email link on the returns page.
+## Settings to fill in
+
+- **Announcement** — the line at the very top of the website.
+- **Instagram** — the link used by the Instagram icon.
+- **About** — the short text in the footer.
+- **Support email** — the address on the returns page.
+- **Shipping fee** — one flat fee for Pakistan.
+- **Low-stock limit** — at or below this number, customers see “Only N left”.
+
+Changes show on the website straight away.
+
+If announcement, Instagram, or About is left empty, the website keeps its built-in text. If support email is empty, the returns page does not show an email address.
 
 ## For the developer
-Photo uploads need the `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` values in `.env` (or one `CLOUDINARY_URL`). The computer’s clock has to be correct, or Cloudinary rejects the upload. Without those values, a photo is saved only on that laptop and will not appear on the live site.
 
-**Change password:** Settings → Change password (current password + new one twice). You stay signed in on this device; every other device is signed out. **Sign out everywhere** is there too, for a lost phone.
+Photo uploads need `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in `.env`, or one `CLOUDINARY_URL`. The computer’s clock must be correct, or the upload is refused. Without those values, a photo is saved only on that laptop.
