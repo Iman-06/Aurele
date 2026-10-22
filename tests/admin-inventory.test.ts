@@ -1,9 +1,8 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
-import os from "node:os";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import ExcelJS from "exceljs";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { runStagedImport, stageImport } from "@/server/admin/excel-import";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { applyPreviewedImport, fingerprintOf, previewImport } from "@/server/admin/excel-import";
 import { getStockHistory, listInventory, receiveStock, updateSettings } from "@/server/admin/inventory";
 import { setFinishPrice } from "@/server/admin/products";
 import { DomainError } from "@/server/errors";
@@ -17,15 +16,7 @@ import { createDesign } from "./helpers/fixtures";
 const REAL_FILE = path.join(process.cwd(), "data", "Lunara_Inventory_System_FINAL.xlsx");
 const customer = { name: "Test Buyer", email: "b@example.com", phone: "03001234567", address: "1 Test Street", city: "Karachi" };
 
-let importDir: string;
-beforeAll(async () => {
-  importDir = await mkdtemp(path.join(os.tmpdir(), "lunara-imports-"));
-  process.env.IMPORT_DIR = importDir;
-});
-afterAll(async () => {
-  await rm(importDir, { recursive: true, force: true });
-  await db.$disconnect();
-});
+afterAll(() => db.$disconnect());
 beforeEach(async () => {
   await resetDb();
   await ensureDefaultSettings(db);
@@ -169,16 +160,27 @@ describe("Excel export", () => {
 describe("Excel import from the admin panel", () => {
   const upload = async (bytes: Uint8Array, name = "inventory.xlsx") => new File([Buffer.from(bytes)], name);
 
-  it("preview saves nothing; apply saves; the upload can't be reused", async () => {
-    const token = await stageImport(await upload(await readFile(REAL_FILE)));
-    const preview = await runStagedImport(db, token, { apply: false });
-    expect(preview).toMatchObject({ dryRun: true, productsCreated: 9, variantsCreated: 22 });
+  it("preview saves nothing; apply saves the same file (nothing is kept on the server in between)", async () => {
+    const bytes = await readFile(REAL_FILE);
+    const preview = await previewImport(db, await upload(bytes));
+    expect(preview.report).toMatchObject({ dryRun: true, productsCreated: 9, variantsCreated: 22 });
+    expect(preview.fingerprint).toBe(fingerprintOf(bytes));
     expect(await db.variant.count()).toBe(0);
 
-    const applied = await runStagedImport(db, token, { apply: true });
+    const applied = await applyPreviewedImport(db, await upload(bytes), preview.fingerprint);
     expect(applied).toMatchObject({ dryRun: false, variantsCreated: 22 });
     expect(await db.variant.count()).toBe(22);
-    await expectError(runStagedImport(db, token, { apply: true }), "INVALID_INPUT", /expired/);
+  });
+
+  it("only applies the exact file that was previewed", async () => {
+    const bytes = await readFile(REAL_FILE);
+    const { fingerprint } = await previewImport(db, await upload(bytes));
+    const changed = new Uint8Array(bytes); // same workbook with one byte different at the end (still a valid zip prefix)
+    changed[changed.length - 1] ^= 0xff;
+    await expectError(applyPreviewedImport(db, await upload(changed), fingerprint), "INVALID_INPUT");
+    await expectError(applyPreviewedImport(db, await upload(bytes), "not-a-fingerprint"), "INVALID_INPUT", /preview the file first/);
+    await expectError(applyPreviewedImport(db, await upload(bytes), "0".repeat(64)), "INVALID_INPUT", /isn't the file you previewed/);
+    expect(await db.variant.count()).toBe(0);
   });
 
   it("keeps the stock protection once orders exist", async () => {
@@ -187,21 +189,17 @@ describe("Excel import from the admin panel", () => {
     await db.variant.update({ where: { id: v.id }, data: { sellingPrice: 2500 } });
     await placeOrder(db, { items: [{ variantId: v.id, quantity: 1 }], customer, paymentMethod: "COD" });
 
-    const token = await stageImport(await upload(await readFile(REAL_FILE)));
-    const r = await runStagedImport(db, token, { apply: true });
+    const bytes = await readFile(REAL_FILE);
+    const { fingerprint } = await previewImport(db, await upload(bytes));
+    const r = await applyPreviewedImport(db, await upload(bytes), fingerprint);
     expect(r.stockProtected).toBe(true);
     expect((await db.variant.findUniqueOrThrow({ where: { id: v.id } })).quantity).toBe(1); // sale kept
   });
 
-  it("rejects non-Excel files, broken files, empty uploads and expired or fake tokens", async () => {
-    await expectError(stageImport(await upload(new TextEncoder().encode("a,b,c"), "x.csv")), "INVALID_INPUT", /\.xlsx/);
-    await expectError(stageImport(await upload(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 1, 2, 3]))), "INVALID_INPUT", /couldn't be read/);
-    await expectError(stageImport(await upload(new Uint8Array())), "INVALID_INPUT");
-    await expectError(runStagedImport(db, "../../.env", { apply: false }), "INVALID_INPUT", /expired/);
-
-    const token = await stageImport(await upload(await readFile(REAL_FILE)));
-    const threeHoursLater = new Date(Date.now() + 3 * 3600_000);
-    await expectError(runStagedImport(db, token, { apply: true }, threeHoursLater), "INVALID_INPUT", /expired/);
+  it("rejects non-Excel files, broken files and empty uploads", async () => {
+    await expectError(previewImport(db, await upload(new TextEncoder().encode("a,b,c"), "x.csv")), "INVALID_INPUT", /\.xlsx/);
+    await expectError(previewImport(db, await upload(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 1, 2, 3]))), "INVALID_INPUT", /couldn't be read/);
+    await expectError(previewImport(db, await upload(new Uint8Array())), "INVALID_INPUT");
     expect(await db.variant.count()).toBe(0);
   });
 });

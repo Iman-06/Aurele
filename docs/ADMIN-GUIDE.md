@@ -84,7 +84,7 @@ After the shop has orders, import does **not** replace stock numbers unless you 
 
 An old file is dangerous. It can rename designs and change prices. If you tick the stock box, it can also put old quantities back and undo sales. Rows that are on the website but missing from the file are left as they are. Import does not delete them. Import does not add or remove the photos customers see. The Photo Ref column is only a note in the sheet.
 
-Ask a developer before a large import. The preview file is kept on the computer running the site, and a hosted site may not allow that.
+Ask a developer before a large import. Keep the page open between **Preview** and **Apply**: the page remembers your file and sends it again when you press Apply, and only the exact file you previewed can be applied. If you pick a different file, preview it first.
 
 ## When an order arrives
 

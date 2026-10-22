@@ -107,7 +107,7 @@ src/server/    business logic — catalog, inventory, orders, admin, auth, media
 src/components/admin/   admin UI pieces
 src/lib/       db client, formatting helpers
 src/proxy.ts   fast first gate for /admin (Next.js 16's renamed middleware)
-storage/       staged Excel imports, and photos uploaded without Cloudinary keys (git-ignored, local only)
+storage/       photos uploaded without Cloudinary keys (git-ignored, local only)
 tests/         integration tests against the test database
 ```
 

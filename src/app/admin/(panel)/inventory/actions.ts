@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { runStagedImport, stageImport } from "@/server/admin/excel-import";
+import { applyPreviewedImport, previewImport } from "@/server/admin/excel-import";
 import { receiveStock, updateSettings } from "@/server/admin/inventory";
 import { requireAdmin } from "@/server/auth/admin-session";
 import { DomainError } from "@/server/errors";
@@ -49,15 +49,14 @@ export async function saveSettingsAction(_s: ActionState, fd: FormData): Promise
 
 // ---- Excel import (preview → apply) ------------------------------------
 
-export type ImportState = { token?: string; report?: ImportReport; applied?: boolean; error?: string } | null;
+export type ImportState = { fingerprint?: string; report?: ImportReport; applied?: boolean; error?: string } | null;
 
 export async function previewImportAction(_s: ImportState, fd: FormData): Promise<ImportState> {
   await requireAdmin();
   try {
     const file = fd.get("file");
     if (!(file instanceof File)) throw new DomainError("INVALID_INPUT", "Please choose the inventory Excel file");
-    const token = await stageImport(file);
-    return { token, report: await runStagedImport(db, token, { apply: false }) };
+    return await previewImport(db, file);
   } catch (e) {
     if (e instanceof DomainError) return { error: e.message };
     throw e;
@@ -67,8 +66,9 @@ export async function previewImportAction(_s: ImportState, fd: FormData): Promis
 export async function applyImportAction(_s: ImportState, fd: FormData): Promise<ImportState> {
   await requireAdmin();
   try {
-    const token = String(fd.get("token") ?? "");
-    const report = await runStagedImport(db, token, { apply: true, overwriteStock: fd.get("overwriteStock") === "on" });
+    const file = fd.get("file");
+    if (!(file instanceof File)) throw new DomainError("INVALID_INPUT", "Please choose the inventory Excel file");
+    const report = await applyPreviewedImport(db, file, String(fd.get("fingerprint") ?? ""), { overwriteStock: fd.get("overwriteStock") === "on" });
     refreshStock();
     return { report, applied: true };
   } catch (e) {

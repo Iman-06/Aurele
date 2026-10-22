@@ -1,8 +1,4 @@
-import { mkdtemp, readdir, rm, utimes, writeFile } from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { sweepExpired } from "@/server/admin/excel-import";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { authenticateAdmin, revokeAllSessions, upsertAdmin } from "@/server/auth/admin-accounts";
 import { signAdminSession } from "@/server/auth/session-token";
 import { validateCart } from "@/server/catalog/catalog";
@@ -21,15 +17,7 @@ async function errorOf(p: Promise<unknown>) {
   return e as DomainError;
 }
 
-let importDir: string;
-beforeAll(async () => {
-  importDir = await mkdtemp(path.join(os.tmpdir(), "lunara-sec-"));
-  process.env.IMPORT_DIR = importDir;
-});
-afterAll(async () => {
-  await rm(importDir, { recursive: true, force: true });
-  await db.$disconnect();
-});
+afterAll(() => db.$disconnect());
 beforeEach(async () => {
   await resetDb();
   await ensureDefaultSettings(db);
@@ -122,14 +110,4 @@ describe("request and upload limits", () => {
     expect(await readJson(new Request("http://x/api", { method: "POST", body: '{"a":1}' }))).toEqual({ a: 1 });
   });
 
-  it("abandoned Excel uploads are cleaned up after 2 hours", async () => {
-    const old = path.join(importDir, "11111111-1111-1111-1111-111111111111.xlsx");
-    const fresh = path.join(importDir, "22222222-2222-2222-2222-222222222222.xlsx");
-    await writeFile(old, "x");
-    await writeFile(fresh, "x");
-    const threeHoursAgo = new Date(Date.now() - 3 * 3600_000);
-    await utimes(old, threeHoursAgo, threeHoursAgo);
-    await sweepExpired();
-    expect(await readdir(importDir)).toEqual(["22222222-2222-2222-2222-222222222222.xlsx"]);
-  });
 });

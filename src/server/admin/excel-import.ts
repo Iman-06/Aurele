@@ -1,33 +1,22 @@
-import { randomUUID } from "node:crypto";
-import { mkdir, readdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
-import path from "node:path";
+import { createHash } from "node:crypto";
 import ExcelJS from "exceljs";
 import type { PrismaClient } from "@/generated/prisma/client";
 import { DomainError } from "../errors";
 import { applyImport, parseWorkbook, type ImportReport } from "../inventory/importer";
 
-// Excel import from the admin panel, in two steps:
-//   1. stageImport(file)          → checks the file, keeps it for up to 2 hours, returns a token
-//   2. runStagedImport(token, …)  → preview (dry run, nothing saved) or apply for real
-// The token lets the owner review the preview and then click Apply without re-uploading.
+// Excel import from the admin panel, in two steps — nothing is ever stored on the server's disk,
+// so it works on any host (Railway restarts, read-only serverless disks, several instances):
+//   1. previewImport(file)                  → checks the file, dry run, returns the report + the file's fingerprint
+//   2. applyImport(file, fingerprint, …)    → the browser sends the SAME file again; it's only applied if its
+//                                             fingerprint matches the one that was previewed
+// The page keeps the chosen file in memory between the two steps, so the owner doesn't re-pick it.
 
 const MAX_BYTES = 5 * 1024 * 1024;
-const TTL_MS = 2 * 3600_000;
-const TOKEN = /^[a-f0-9-]{36}$/;
-const dir = () => path.join(/*turbopackIgnore: true*/ process.env.IMPORT_DIR ?? path.join(process.cwd(), "storage", "imports"));
-const fileFor = (token: string) => path.join(/*turbopackIgnore: true*/ dir(), `${token}.xlsx`);
+const FINGERPRINT = /^[a-f0-9]{64}$/;
 
-async function loadWorkbook(bytes: Uint8Array) {
-  const wb = new ExcelJS.Workbook();
-  try {
-    await wb.xlsx.load(Buffer.from(bytes) as unknown as ArrayBuffer);
-  } catch {
-    throw new DomainError("INVALID_INPUT", "That file couldn't be read as an Excel workbook (.xlsx)");
-  }
-  return wb;
-}
+export const fingerprintOf = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 
-export async function stageImport(file: File): Promise<string> {
+async function readUpload(file: File) {
   if (!file || file.size === 0) throw new DomainError("INVALID_INPUT", "Please choose the inventory Excel file");
   if (file.size > MAX_BYTES) throw new DomainError("INVALID_INPUT", "File is too large — maximum 5 MB");
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -35,42 +24,33 @@ export async function stageImport(file: File): Promise<string> {
   if (!(bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04)) {
     throw new DomainError("INVALID_INPUT", "Please upload an Excel .xlsx file (old .xls and CSV aren't supported)");
   }
-  await loadWorkbook(bytes); // make sure it really opens before keeping it
-
-  const token = randomUUID();
-  await mkdir(/*turbopackIgnore: true*/ dir(), { recursive: true });
-  await sweepExpired();
-  await writeFile(/*turbopackIgnore: true*/ fileFor(token), bytes);
-  return token;
-}
-
-/** Delete staged uploads older than 2 hours (previews that were never applied). */
-export async function sweepExpired(now = new Date()) {
-  const names = await readdir(/*turbopackIgnore: true*/ dir()).catch(() => [] as string[]);
-  for (const name of names) {
-    if (!/^[a-f0-9-]{36}\.xlsx$/.test(name)) continue;
-    const file = path.join(/*turbopackIgnore: true*/ dir(), name);
-    const info = await stat(/*turbopackIgnore: true*/ file).catch(() => null);
-    if (info && now.getTime() - info.mtimeMs > TTL_MS) await unlink(/*turbopackIgnore: true*/ file).catch(() => {});
+  const wb = new ExcelJS.Workbook();
+  try {
+    await wb.xlsx.load(Buffer.from(bytes) as unknown as ArrayBuffer);
+  } catch {
+    throw new DomainError("INVALID_INPUT", "That file couldn't be read as an Excel workbook (.xlsx)");
   }
+  return { bytes, wb };
 }
 
-export async function runStagedImport(
+/** Step 1: dry run — nothing is saved. Returns what would change and the file's fingerprint. */
+export async function previewImport(db: PrismaClient, file: File): Promise<{ report: ImportReport; fingerprint: string }> {
+  const { bytes, wb } = await readUpload(file);
+  const report = await applyImport(db, parseWorkbook(wb), { dryRun: true });
+  return { report, fingerprint: fingerprintOf(bytes) };
+}
+
+/** Step 2: apply for real — only the exact file that was previewed. */
+export async function applyPreviewedImport(
   db: PrismaClient,
-  token: string,
-  opts: { apply: boolean; overwriteStock?: boolean },
-  now = new Date(),
+  file: File,
+  fingerprint: string,
+  opts: { overwriteStock?: boolean } = {},
 ): Promise<ImportReport> {
-  if (!TOKEN.test(token)) throw new DomainError("INVALID_INPUT", "Upload expired — please upload the file again");
-  const file = fileFor(token);
-  const info = await stat(/*turbopackIgnore: true*/ file).catch(() => null);
-  if (!info || now.getTime() - info.mtimeMs > TTL_MS) {
-    if (info) await unlink(/*turbopackIgnore: true*/ file).catch(() => {});
-    throw new DomainError("INVALID_INPUT", "Upload expired — please upload the file again");
+  if (!FINGERPRINT.test(fingerprint)) throw new DomainError("INVALID_INPUT", "Please preview the file first, then apply");
+  const { bytes, wb } = await readUpload(file);
+  if (fingerprintOf(bytes) !== fingerprint) {
+    throw new DomainError("INVALID_INPUT", "This isn't the file you previewed — please preview it again before applying");
   }
-
-  const wb = await loadWorkbook(await readFile(/*turbopackIgnore: true*/ file));
-  const report = await applyImport(db, parseWorkbook(wb), { dryRun: !opts.apply, overwriteStock: opts.overwriteStock });
-  if (opts.apply) await unlink(/*turbopackIgnore: true*/ file).catch(() => {});
-  return report;
+  return applyImport(db, parseWorkbook(wb), { dryRun: false, overwriteStock: opts.overwriteStock });
 }

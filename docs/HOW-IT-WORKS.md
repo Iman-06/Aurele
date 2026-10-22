@@ -91,7 +91,6 @@ Names and purpose only. Real values stay in `.env` and the host. `.env.example` 
 | `CLOUDINARY_URL` | Optional single-string substitute for the three Cloudinary values | No | Mentioned |
 | `NEXT_PUBLIC_SUPPORT_EMAIL` | Fallback support address when Settings has none | No | No |
 | `MEDIA_DIR` | Local folder when Cloudinary is not configured | No | No |
-| `IMPORT_DIR` | Staging folder for Excel imports | No | No |
 | `TEST_DATABASE_URL` | Local database whose name ends in `_test`. Tests wipe it | No | Yes |
 | `NODE_ENV` | Set by Next.js. Production makes the admin cookie Secure | Set by the host | No |
 

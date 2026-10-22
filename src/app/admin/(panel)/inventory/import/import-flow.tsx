@@ -1,14 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import { btn, btnSecondary, card } from "@/components/admin/ui";
 import type { ImportReport } from "@/server/inventory/importer";
 import { applyImportAction, previewImportAction, type ImportState } from "../actions";
 
+// Nothing is stored on the server between Preview and Apply: this page keeps the chosen file and
+// sends it again on Apply, with the fingerprint from the preview (the server checks they match).
 export function ImportFlow() {
   const [preview, previewAction, previewing] = useActionState<ImportState, FormData>(previewImportAction, null);
   const [result, applyAction, applying] = useActionState<ImportState, FormData>(applyImportAction, null);
+  const [file, setFile] = useState<File | null>(null);
+  const [previewedFile, setPreviewedFile] = useState<File | null>(null);
+  // Picking another file after the preview hides Apply until that file is previewed too
+  const canApply = !!(preview?.report && preview.fingerprint && file && file === previewedFile);
 
   if (result?.applied && result.report) {
     return (
@@ -26,10 +32,28 @@ export function ImportFlow() {
 
   return (
     <div className="space-y-6">
-      <form action={previewAction} className={`${card} space-y-3`}>
+      <form
+        className={`${card} space-y-3`}
+        onSubmit={(e) => {
+          // Submit by hand: a plain <form action> would clear the chosen file after the preview
+          e.preventDefault();
+          if (!file || previewing) return;
+          const fd = new FormData();
+          fd.set("file", file);
+          setPreviewedFile(file);
+          startTransition(() => previewAction(fd));
+        }}
+      >
         <label className="block space-y-1">
           <span className="block text-sm font-medium">1. Choose the inventory workbook (.xlsx)</span>
-          <input name="file" type="file" required accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" className="text-sm" />
+          <input
+            name="file"
+            type="file"
+            required
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            className="text-sm"
+            onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)}
+          />
         </label>
         <button disabled={previewing} className={btnSecondary}>
           {previewing ? "Checking…" : "2. Preview changes"}
@@ -42,11 +66,20 @@ export function ImportFlow() {
         )}
       </form>
 
-      {preview?.report && preview.token && (
+      {canApply && preview?.report && (
         <div className="space-y-4">
           <Report r={preview.report} />
-          <form action={applyAction} className={`${card} space-y-3`}>
-            <input type="hidden" name="token" value={preview.token} />
+          <form
+            className={`${card} space-y-3`}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!file || !preview.fingerprint || applying) return;
+              const fd = new FormData(e.currentTarget); // overwriteStock checkbox
+              fd.set("file", file);
+              fd.set("fingerprint", preview.fingerprint);
+              startTransition(() => applyAction(fd));
+            }}
+          >
             {preview.report.stockProtected && (
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" name="overwriteStock" className="mt-1" />
