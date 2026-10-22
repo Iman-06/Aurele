@@ -38,8 +38,14 @@ Website for **Aurelé**, a contemporary jewellery brand in Pakistan — one Next
 
 ## Setup (new machine)
 
-You need **Node.js 22+** and Git. **No database install is needed to run the site** — it uses the team's shared
+You need **Node.js 22+** and Git. **No database install is needed to run the site** — it uses the team's
 **Neon** database in the cloud. (A local PostgreSQL is only needed to run the automated tests — see below.)
+
+**Two Neon branches:**
+- **`production`** — the live shop (real orders, real customers). **Only the host (Railway) uses its connection strings.**
+- **`dev`** — a copy for development. **Every laptop's `.env` uses `dev`**, so local testing never touches live orders.
+  It's a snapshot from when it was made; to refresh it, open the `dev` branch in the Neon console → **Reset from parent**
+  (this throws away everything on dev and copies production again).
 
 ```bash
 git clone https://github.com/Iman-06/Aurele.git
@@ -54,8 +60,8 @@ What goes in `.env` (see `.env.example` for the format):
 
 | Variable | What | Needed for |
 |---|---|---|
-| `DATABASE_URL` | Neon **pooled** connection string (host contains `-pooler`) | everything |
-| `DIRECT_URL` | Neon **direct** connection string (no `-pooler`) | applying migrations |
+| `DATABASE_URL` | Neon **pooled** connection string of the **`dev`** branch (host contains `-pooler`) — production only on the host | everything |
+| `DIRECT_URL` | Neon **direct** connection string of the same branch (no `-pooler`) | applying migrations |
 | `AUTH_SECRET` | long random string — signs the admin login cookie and the order-confirmation links | admin, checkout |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | the shop's Cloudinary account (Settings → API Keys) | photo uploads. Without them, uploads are saved on your laptop only (`storage/uploads`) |
 | `RESEND_API_KEY`, `EMAIL_FROM`, `ORDER_NOTIFICATION_EMAIL` | order emails (Resend) | checkout emails |
@@ -67,15 +73,21 @@ Generate secrets with `node -e "console.log(require('crypto').randomBytes(48).to
 **Your computer's clock must be right** (Windows: Settings → Time & language → "Set time automatically") — Cloudinary
 refuses uploads from a clock that is more than an hour off.
 
-**First admin login:** `npm run admin:create` creates an admin on the shared database (asks for email + password).
+**First admin login:** `npm run admin:create` creates an admin on whichever branch `.env` points at (asks for email + password) —
+for the owner's real login, run it once with the **production** strings.
 Run it again with the same email to reset a forgotten password. Signed-in admins change their password in Settings.
 
 **Shared database rules.** Neon already has the tables and the inventory — **don't** run `npm run setup` or
 `npm run db:seed` against it. Schema changes are agreed by the team first, then:
 1. create the migration against a throwaway **local** database, e.g.
    `DIRECT_URL="postgresql://postgres:…@localhost:5432/aurele_dev" npm run db:migrate -- --name <change>`
-2. commit + push it, and apply it to Neon with `npm run db:deploy`. Never run `db:migrate` against Neon — it can reset the database.
-3. Everyone else: after pulling, run `npx prisma generate` and restart `npm run dev`.
+2. commit it, and apply it to the **dev** branch with `npm run db:deploy` (your `.env` points at dev). Check the site.
+3. push it. **Production** gets it automatically: Railway runs `npx prisma migrate deploy` before each deploy
+   (see `docs/DEPLOYMENT.md`). Never run `db:migrate` against Neon — it can reset the database.
+4. Everyone else: after pulling, run `npx prisma generate`, `npm run db:deploy` (for dev) and restart `npm run dev`.
+
+**Backups.** Neon can rewind `production` to any moment in the last **6 hours** (Backup & Restore → Restore from history).
+Anything older needs a **snapshot** — set a daily snapshot schedule on `production` (Backup & Restore → Create snapshot).
 
 ### Running the automated tests (optional)
 The tests wipe their database, so they **never** use Neon: they need a local PostgreSQL 16+ with an empty database
@@ -90,7 +102,7 @@ that isn't a local `*_test` database, and never upload to Cloudinary. Then `npm 
 | `npm test` | all automated tests (local `*_test` database only — it gets wiped) |
 | `npm run typecheck` / `npm run lint` | static checks |
 | `npm run db:migrate -- --name <change>` | create a migration after editing the schema — **local DB only** (see Shared database rules) |
-| `npm run db:deploy` | apply committed migrations to the shared Neon DB (non-interactive) |
+| `npm run db:deploy` | apply committed migrations to the Neon branch in `.env` (dev on laptops; Railway does production) |
 | `npm run import:inventory -- --dry-run` | preview an Excel import (owner can also do this in the admin) |
 | `npm run admin:create` | create an admin or reset a password (signs that admin out everywhere) |
 | `npm run db:studio` | browse the database |

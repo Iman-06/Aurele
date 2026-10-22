@@ -22,8 +22,8 @@ Configure these in the Railway service settings (**Variables** tab):
 
 | Variable | Purpose | Example / Dev | Production | Secret? |
 | :--- | :--- | :--- | :--- | :--- |
-| `DATABASE_URL` | Neon pooled connection string (with `-pooler`) | `postgresql://...@...-pooler.../neondb` | Neon `main` pooled branch | **Yes** |
-| `DIRECT_URL` | Neon direct connection string (unpooled) | `postgresql://...@ep-.../neondb` | Neon `main` direct branch | **Yes** |
+| `DATABASE_URL` | Neon pooled connection string (with `-pooler`) | `postgresql://...@...-pooler.../neondb` | Neon **`production`** branch, pooled (never `dev`) | **Yes** |
+| `DIRECT_URL` | Neon direct connection string (unpooled) | `postgresql://...@ep-.../neondb` | Neon **`production`** branch, direct (never `dev`) | **Yes** |
 | `AUTH_SECRET` | Admin session JWT cookie signing | Long random 32+ char string | Long random 64 char string | **Yes** |
 | `CRON_SECRET` | Protects `/api/cron/abandon-orders` | Random alphanumeric string | Random alphanumeric string | **Yes** |
 | `RESEND_API_KEY` | Resend transactional email API key | `re_test_...` | `re_live_...` | **Yes** |
@@ -82,7 +82,7 @@ On the Railway Hobby Plan ($5 base + usage):
    - This ensures unforeseen traffic spikes never incur unwanted charges.
 2. Neon Database:
    - Stay on the Free / Launch tier with auto-suspend enabled for dev branches.
-   - Run tests only against local or dedicated test branches; never wipe `main`.
+   - Run tests only against local or dedicated test branches; never wipe the `production` branch.
 
 ---
 
