@@ -5,10 +5,28 @@ import { badge, btnDanger, card, input, label } from "@/components/admin/ui";
 import type { Promotion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/server/auth/admin-session";
-import { getBanner, listPromotions, type PromotionState } from "@/server/content/homepage";
-import { createPromotionAction, deletePromotionAction, saveBannerAction, updatePromotionAction } from "./actions";
+import { CURATED_TILES, ELEGANCE_TILES } from "@/lib/curated-tiles";
+import { getBanner, getTileImages, HOME_TILES, listPromotions, type HomeTile, type PromotionState } from "@/server/content/homepage";
+import {
+  createPromotionAction,
+  deletePromotionAction,
+  resetTileImageAction,
+  saveBannerAction,
+  saveTileImageAction,
+  updatePromotionAction,
+} from "./actions";
 
 export const metadata = { title: "Homepage" };
+
+// Name + the storefront's built-in picture for each tile (shown until the owner uploads one)
+const TILE_INFO: Record<HomeTile, { name: string; builtIn: string | undefined }> = {
+  earrings: { name: "Earrings", builtIn: ELEGANCE_TILES.find((t) => t.id === "elegance-earrings")?.image },
+  rings: { name: "Rings", builtIn: ELEGANCE_TILES.find((t) => t.id === "elegance-rings")?.image },
+  necklace: { name: "Necklace", builtIn: ELEGANCE_TILES.find((t) => t.id === "elegance-necklace")?.image },
+  bracelets: { name: "Bracelets", builtIn: ELEGANCE_TILES.find((t) => t.id === "elegance-bracelets")?.image },
+  newArrivals: { name: "New Arrivals", builtIn: CURATED_TILES.find((t) => t.id === "new-arrivals")?.image },
+  oneOfAKind: { name: "One of a Kind", builtIn: CURATED_TILES.find((t) => t.id === "one-of-a-kind")?.image },
+};
 
 const STATE: Record<PromotionState, [string, string]> = {
   LIVE: ["Live now", "bg-emerald-50 text-emerald-700"],
@@ -24,13 +42,13 @@ const pktText = (d: Date) => new Intl.DateTimeFormat("en-PK", { timeZone: "Asia/
 
 export default async function HomepageContentPage() {
   await requireAdmin();
-  const [banner, promotions] = await Promise.all([getBanner(db), listPromotions(db)]);
+  const [banner, promotions, tiles] = await Promise.all([getBanner(db), listPromotions(db), getTileImages(db)]);
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">Homepage</h1>
-        <p className="text-sm text-stone-500">The main banner and the promotion strip on the website&apos;s home page. Changes appear immediately.</p>
+        <p className="text-sm text-stone-500">The main banner, the promotion strip and the tile pictures on the website&apos;s home page. Changes appear immediately.</p>
       </div>
 
       {/* ---------------- Banner ---------------- */}
@@ -97,6 +115,46 @@ export default async function HomepageContentPage() {
       </section>
 
       {/* ---------------- Promotions ---------------- */}
+      {/* ---------------- Tile pictures ---------------- */}
+      <section className={card}>
+        <h2 className="font-semibold">Homepage tiles</h2>
+        <p className="mb-4 text-sm text-stone-600">
+          The picture on each shop-by tile. Until you upload one, the website uses its built-in picture. Square or portrait photos work best
+          (JPG, PNG or WebP, up to 5 MB).
+        </p>
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {HOME_TILES.map((tile) => {
+            const info = TILE_INFO[tile];
+            const current = tiles[tile] ?? info.builtIn;
+            return (
+              <div key={tile} className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium">{info.name}</p>
+                  {tiles[tile] ? (
+                    <span className={`${badge} bg-emerald-50 text-emerald-700`}>Your photo</span>
+                  ) : (
+                    <span className={`${badge} bg-stone-100 text-stone-600`}>Built-in</span>
+                  )}
+                </div>
+                <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-stone-100">
+                  {current && <Image src={current} alt={`${info.name} tile`} fill sizes="300px" className="object-cover" unoptimized />}
+                </div>
+                <ActionForm action={saveTileImageAction.bind(null, tile)} submitLabel="Upload" pendingLabel="Uploading…" className="space-y-1">
+                  <input name="image" type="file" accept="image/jpeg,image/png,image/webp" required aria-label={`New picture for the ${info.name} tile`} className="w-full text-sm" />
+                </ActionForm>
+                {tiles[tile] && (
+                  <form action={resetTileImageAction.bind(null, tile)}>
+                    <ConfirmButton message={`Go back to the built-in ${info.name} picture? Your photo will be deleted.`} className={btnDanger}>
+                      Use built-in picture
+                    </ConfirmButton>
+                  </form>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
       <section className={card}>
         <h2 className="font-semibold">Promotions</h2>
         <p className="mb-4 text-sm text-stone-500">

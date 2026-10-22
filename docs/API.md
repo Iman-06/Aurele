@@ -90,8 +90,8 @@ Each line returns `name`, `label` ("Aveline Pearl Drop — Gold, Blue"), `finish
 ### `POST /api/subscribe` — footer mailing list
 Body `{ "email": "…" }` → `200 { "ok": true }` (also for repeat sign-ups), `400` for an invalid email.
 
-### `GET /api/store/home` — homepage banner + promotion
-`getHomeContent()` in `src/server/content/homepage.ts`. The owner edits both in **/admin/homepage**; either can be `null` → don't render that section.
+### `GET /api/store/home` — homepage banner, promotion and tile pictures
+`getHomeContent()` in `src/server/content/homepage.ts`. The owner edits all of it in **/admin/homepage**; `banner` / `promotion` can be `null` → don't render that section.
 
 ```json
 {
@@ -104,11 +104,17 @@ Body `{ "email": "…" }` → `200 { "ok": true }` (also for repeat sign-ups), `
     "title": "Eid Sale — 20% off earrings", "details": "Ends Sunday",
     "link": { "text": "Shop the sale", "url": "/category/earrings" },
     "url": "/category/earrings", "endsAt": "2026-10-19T19:00:00.000Z"
+  },
+  "tiles": {
+    "earrings": "https://res.cloudinary.com/…/aurele/homepage/….jpg",
+    "rings": null, "necklace": null, "bracelets": null, "newArrivals": null, "oneOfAKind": null
   }
 }
 ```
 - `mobileImageUrl` falls back to `imageUrl` — use it below ~640px. `button` / `link` are `null` when the owner didn't add one; `promotion.url` can make the whole strip clickable.
 - Links are always `/…` (this site) or `http(s)://` — safe to put in `href`.
+- `tiles` = the picture for each homepage tile (the 4 category tiles, New Arrivals, One of a Kind). `null` → keep the built-in
+  picture from `src/lib/curated-tiles.ts`. Server components can call `getTileImages(db)` directly.
 - Scheduling is handled by the backend: a promotion appears and disappears on its own dates. The response changes over time, so don't cache it for long (a minute is fine).
 
 ### `GET /api/store/settings`

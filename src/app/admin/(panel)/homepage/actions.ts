@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/server/auth/admin-session";
-import { createPromotion, deletePromotion, saveBanner, updatePromotion } from "@/server/content/homepage";
+import { createPromotion, deletePromotion, resetTileImage, saveBanner, saveTileImage, updatePromotion } from "@/server/content/homepage";
 import { run, type ActionState } from "../action-state";
 
 const fields = (fd: FormData) => Object.fromEntries([...fd.entries()].filter(([, v]) => typeof v === "string")) as Record<string, string>;
@@ -46,4 +46,21 @@ export async function deletePromotionAction(promotionId: number): Promise<void> 
   await requireAdmin();
   await deletePromotion(db, id(promotionId)).catch(() => {}); // already gone is fine
   refresh();
+}
+
+export async function saveTileImageAction(tile: string, _s: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdmin();
+  return run(async () => {
+    await saveTileImage(db, tile, file(fd, "image"));
+    refresh();
+    revalidatePath("/"); // the storefront homepage
+    return "Tile picture saved";
+  });
+}
+
+export async function resetTileImageAction(tile: string): Promise<void> {
+  await requireAdmin();
+  await resetTileImage(db, z.string().parse(tile));
+  refresh();
+  revalidatePath("/");
 }

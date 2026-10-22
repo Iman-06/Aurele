@@ -8,7 +8,9 @@ import {
   getHomeContent,
   listPromotions,
   promotionState,
+  resetTileImage,
   saveBanner,
+  saveTileImage,
   updatePromotion,
 } from "@/server/content/homepage";
 import { GET as homeRoute } from "@/app/api/store/home/route";
@@ -40,7 +42,7 @@ beforeEach(async () => {
 
 describe("homepage banner", () => {
   it("nothing is shown until a banner with a photo is switched on", async () => {
-    expect(await getHomeContent(db)).toEqual({ banner: null, promotion: null });
+    expect(await getHomeContent(db)).toMatchObject({ banner: null, promotion: null });
     await expectInvalid(saveBanner(db, { heading: "New Collection", isActive: "on" }), /Upload a banner photo/);
     expect(await readdir(mediaDir)).toEqual([]);
 
@@ -142,5 +144,42 @@ describe("promotions", () => {
     const res = await homeRoute();
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ banner: null, promotion: { title: "Free shipping over Rs 5,000", link: null, url: null } });
+  });
+});
+
+describe("homepage tile pictures", () => {
+  const NO_TILES = { earrings: null, rings: null, necklace: null, bracelets: null, newArrivals: null, oneOfAKind: null };
+
+  it("all tiles use the built-in pictures (null) until the owner uploads one", async () => {
+    expect((await getHomeContent(db)).tiles).toEqual(NO_TILES);
+    const body = await (await homeRoute()).json();
+    expect(body.tiles).toEqual(NO_TILES);
+  });
+
+  it("uploading replaces the tile picture and deletes the old file; reset goes back to built-in", async () => {
+    const first = await saveTileImage(db, "rings", photo());
+    expect(first).toMatch(/^\/media\/.+\.png$/);
+    expect((await getHomeContent(db)).tiles).toEqual({ ...NO_TILES, rings: first });
+
+    const second = await saveTileImage(db, "rings", photo());
+    expect((await getHomeContent(db)).tiles.rings).toBe(second);
+    expect(await readdir(mediaDir)).toEqual([second.replace("/media/", "")]); // old file removed
+
+    await saveTileImage(db, "newArrivals", photo());
+    await saveTileImage(db, "oneOfAKind", photo());
+    expect(Object.values((await getHomeContent(db)).tiles).filter(Boolean)).toHaveLength(3);
+
+    await resetTileImage(db, "rings");
+    expect((await getHomeContent(db)).tiles.rings).toBeNull();
+    expect(await readdir(mediaDir)).toHaveLength(2); // only the New Arrivals + One of a Kind photos left
+  });
+
+  it("refuses unknown tiles, missing photos and non-images", async () => {
+    await expectInvalid(saveTileImage(db, "shoes", photo()), /Unknown homepage tile/);
+    await expectInvalid(resetTileImage(db, "shoes"), /Unknown homepage tile/);
+    await expectInvalid(saveTileImage(db, "earrings", null), /Choose a photo/);
+    await expectInvalid(saveTileImage(db, "earrings", new File([new Uint8Array([1, 2, 3, 4])], "x.png")), /JPG, PNG or WebP/);
+    expect((await getHomeContent(db)).tiles).toEqual(NO_TILES);
+    expect(await readdir(mediaDir)).toEqual([]);
   });
 });

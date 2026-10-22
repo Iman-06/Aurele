@@ -104,13 +104,13 @@ Search by order number, name, phone, email, or tracking number. **From** and **T
 
 ## Homepage
 
-**Homepage** is the big banner and the thin promotion strip.
+**Homepage** is the big banner, the thin promotion strip, and the pictures on the homepage tiles.
 
 Upload the banner here, not on cloudinary.com. Use a wide photo, and a tall photo for phones if you want one. Write the heading, the line under it, and the button. Tick **Show the banner** to put it on the site. Untick it to hide it without deleting it.
 
 A promotion needs a headline. The extra line, button, and dates are optional. It can turn on and off by itself. If two are on at once, the newer one shows.
 
-The category pictures on the home page are not edited here.
+**Homepage tiles** are the pictures on the shop-by tiles: Earrings, Rings, Necklace, Bracelets, New Arrivals and One of a Kind. Each tile shows its built-in picture until you upload your own (square or portrait photos work best). **Use built-in picture** goes back to the original and deletes your photo.
 
 ## Mailing list
 

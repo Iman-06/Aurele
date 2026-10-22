@@ -3,7 +3,7 @@ import type { PrismaClient, Promotion } from "@/generated/prisma/client";
 import { DomainError } from "../errors";
 import { removeImage, saveImage } from "../media/storage";
 
-// Homepage banner + promotions: edited in /admin/homepage, read by the storefront
+// Homepage banner + promotions + tile pictures: edited in /admin/homepage, read by the storefront
 // through getHomeContent() / GET /api/store/home. Admin callers check requireAdmin() first.
 
 // ------------------------------------------------------------
@@ -166,6 +166,45 @@ export async function deletePromotion(db: PrismaClient, id: number) {
 }
 
 // ------------------------------------------------------------
+// Homepage tile pictures (category tiles + New Arrivals + One of a Kind)
+// Stored as Setting rows "tile_image_<tile>" → photo URL. No row = the storefront's built-in picture.
+// ------------------------------------------------------------
+
+export const HOME_TILES = ["earrings", "rings", "necklace", "bracelets", "newArrivals", "oneOfAKind"] as const;
+export type HomeTile = (typeof HOME_TILES)[number];
+export type TileImages = Record<HomeTile, string | null>;
+
+const tileKey = (tile: HomeTile) => `tile_image_${tile}`;
+
+function assertTile(tile: string): asserts tile is HomeTile {
+  if (!(HOME_TILES as readonly string[]).includes(tile)) throw new DomainError("INVALID_INPUT", "Unknown homepage tile");
+}
+
+export async function getTileImages(db: PrismaClient): Promise<TileImages> {
+  const rows = await db.setting.findMany({ where: { key: { in: HOME_TILES.map(tileKey) } } });
+  return Object.fromEntries(HOME_TILES.map((t) => [t, rows.find((r) => r.key === tileKey(t))?.value || null])) as TileImages;
+}
+
+/** Upload a new picture for one tile (the old uploaded one is deleted after the save). */
+export async function saveTileImage(db: PrismaClient, tile: string, file: File | null) {
+  assertTile(tile);
+  if (!file || file.size === 0) throw new DomainError("INVALID_INPUT", "Choose a photo for this tile");
+  const old = (await getTileImages(db))[tile];
+  const url = await saveImage(file, "homepage"); // validates type + size
+  await db.setting.upsert({ where: { key: tileKey(tile) }, create: { key: tileKey(tile), value: url }, update: { value: url } });
+  if (old && old !== url) await removeImage(old);
+  return url;
+}
+
+/** Go back to the storefront's built-in picture for this tile. */
+export async function resetTileImage(db: PrismaClient, tile: string) {
+  assertTile(tile);
+  const old = (await getTileImages(db))[tile];
+  await db.setting.deleteMany({ where: { key: tileKey(tile) } });
+  if (old) await removeImage(old);
+}
+
+// ------------------------------------------------------------
 // What the storefront shows
 // ------------------------------------------------------------
 
@@ -184,10 +223,12 @@ export type HomeContent = {
     url: string | null; // the whole strip can be clickable even without button text
     endsAt: string | null; // ISO — e.g. for "ends Sunday"
   } | null;
+  /** Owner-uploaded tile pictures; null → use the storefront's built-in picture for that tile. */
+  tiles: TileImages;
 };
 
 export async function getHomeContent(db: PrismaClient, now = new Date()): Promise<HomeContent> {
-  const [b, promos] = await Promise.all([
+  const [b, promos, tiles] = await Promise.all([
     getBanner(db),
     db.promotion.findMany({
       where: {
@@ -198,6 +239,7 @@ export async function getHomeContent(db: PrismaClient, now = new Date()): Promis
       orderBy: [{ startsAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
       take: 1,
     }),
+    getTileImages(db),
   ]);
 
   const banner =
@@ -222,5 +264,5 @@ export async function getHomeContent(db: PrismaClient, now = new Date()): Promis
       }
     : null;
 
-  return { banner, promotion };
+  return { banner, promotion, tiles };
 }
